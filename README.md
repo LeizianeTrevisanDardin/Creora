@@ -132,4 +132,3 @@ zoom-out
 pan-left
 pan-right
 static
-```text
