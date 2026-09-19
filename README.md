@@ -114,7 +114,7 @@ Scene 5 — Final Look
 Scene 6 — CTA
 13s–15s
 
-##Each scene can contain:
+Each scene can contain:
 
 Title
 Start time
@@ -126,9 +126,195 @@ Motion speed
 Supported Camera Motion
 
 Currently supported scene motions:
-```text
+
 zoom-in
 zoom-out
 pan-left
 pan-right
 static
+
+Motion speeds:
+
+slow
+medium
+fast
+Local AI
+
+Creora currently uses Ollama locally.
+
+Recommended model:
+
+qwen2.5:3b
+
+Ollama endpoint:
+
+http://localhost:11434/api/generate
+
+This allows the content-generation system to run locally without requiring a paid AI API.
+
+Video Rendering
+
+Creora uses Remotion to create video previews and MP4 exports.
+
+Current output format:
+
+Resolution: 1080 × 1920
+Aspect Ratio: 9:16
+Frame Rate: 30 FPS
+Codec: H.264
+Format: MP4
+Project Structure
+src
+├── app
+│   ├── api
+│   │   ├── generate-content
+│   │   │   └── route.ts
+│   │   ├── regenerate-scene
+│   │   │   └── route.ts
+│   │   └── export-video
+│   │       └── route.ts
+│   │
+│   └── page.tsx
+│
+├── components
+│   ├── creator
+│   │   └── CreatorInputPanel.tsx
+│   │
+│   ├── dashboard
+│   │   ├── Header.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── StepProgress.tsx
+│   │
+│   ├── editor
+│   │   ├── EditorControls.tsx
+│   │   ├── ScriptPanel.tsx
+│   │   └── VideoPreview.tsx
+│   │
+│   └── video
+│       ├── SceneComposition.tsx
+│       ├── ScenePlayer.tsx
+│       ├── FullVideoComposition.tsx
+│       └── FullVideoPlayer.tsx
+│
+└── remotion
+    ├── index.ts
+    └── Root.tsx
+Getting Started
+
+Clone the repository:
+
+git clone YOUR_REPOSITORY_URL
+
+Enter the project:
+
+cd creora
+
+Install dependencies:
+
+npm install
+
+Start Ollama:
+
+ollama serve
+
+Make sure the model is installed:
+
+ollama pull qwen2.5:3b
+
+Run the development server:
+
+npm run dev
+
+Open:
+
+http://localhost:3000
+Remotion
+
+To check available Remotion compositions:
+
+npx remotion compositions src/remotion/index.ts
+
+The main composition is:
+
+CreoraFullVideo
+Current Development Stage
+
+Creora is currently an MVP under active development.
+
+The current version can generate scripts, build scenes, animate uploaded images, preview the complete video, and export the result as an MP4.
+
+At this stage, all scenes can still use the same uploaded image.
+
+Planned Features
+Different image for each scene
+Upload / replace image per scene
+AI-generated scene images
+Creator-focused scenes
+Product-focused scenes
+Automatic scene image selection
+Scene transitions
+Animated captions
+Voiceover
+Background music
+Audio controls
+Branding
+Logo overlays
+Editable project titles
+Scene reordering
+Scene deletion
+Timeline editor
+Export settings
+Project saving
+Templates
+User accounts
+Project dashboard
+Cloud storage
+Creator profiles
+Multiple video formats
+Future Vision
+
+The long-term goal is for Creora to generate complete creator-style videos from a simple prompt.
+
+For example, a user could request:
+
+Create a 15-second luxury perfume video.
+
+Show the creator getting ready for dinner,
+holding the perfume,
+applying it to her wrist,
+and showing the final look.
+
+Creora could then automatically create:
+
+Hook
+↓
+Creator getting ready
+↓
+Product close-up
+↓
+Creator using the product
+↓
+Final look
+↓
+Call to action
+
+Each scene could eventually contain its own generated visual or video clip.
+
+Development Philosophy
+
+The current development approach focuses on:
+
+Keeping the architecture simple
+Building features incrementally
+Prioritizing local tools where possible
+Avoiding unnecessary API costs
+Creating a clean creator-friendly workflow
+Maintaining editable AI output
+Keeping the final user in control of generated content
+Status
+
+In active development.
+
+Creora is not yet production-ready.
+
+Built with Next.js, Ollama, and Remotion.
