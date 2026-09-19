@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Creora — AI Content Studio
 
-## Getting Started
+Creora is an AI-powered content creation studio designed to help creators turn a single idea and image into structured, ready-to-edit short-form social media videos.
 
-First, run the development server:
+The project focuses on creating content for platforms such as TikTok, Instagram Reels, and YouTube Shorts.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Overview
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Creora helps creators generate:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Video concepts
+- Hooks
+- Scene-by-scene scripts
+- Visual prompts
+- Camera motion suggestions
+- Social captions
+- Hashtags
+- Full vertical video previews
+- MP4 exports
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The application currently uses local AI and local video rendering, avoiding paid APIs during development.
 
-## Learn More
+## Current Features
 
-To learn more about Next.js, take a look at the following resources:
+- AI content generation with Ollama
+- Local model using `qwen2.5:3b`
+- Creator profile / description input
+- Video prompt input
+- Platform selection
+- Video duration selection
+- Video style selection
+- AI-generated hook
+- AI-generated scene structure
+- Scene durations
+- Scene scripts
+- Visual prompts
+- Camera motion per scene
+- Motion speed per scene
+- Individual scene preview
+- Edit visual prompt
+- Edit full script
+- Regenerate individual scenes
+- Add custom scenes
+- Full video preview
+- Vertical 9:16 video format
+- Remotion-based video animation
+- MP4 export
+- H.264 rendering
+- Social media caption generation
+- Hashtag generation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Frontend
 
-## Deploy on Vercel
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Lucide React
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### AI
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Ollama
+- Qwen 2.5 3B
+
+### Video
+
+- Remotion
+- `@remotion/player`
+- `@remotion/renderer`
+- `@remotion/bundler`
+- `@remotion/cli`
+
+## How It Works
+
+The current workflow is:
+
+1. Upload an image
+2. Describe the creator
+3. Describe the video idea
+4. Select a platform
+5. Select a video duration
+6. Select a video style
+7. Generate the video structure with local AI
+8. Review the generated hook and scenes
+9. Edit scripts or visual prompts
+10. Preview individual scenes
+11. Preview the complete video
+12. Export the final video as MP4
+
+## Video Structure
+
+A generated video is divided into multiple scenes.
+
+Example:
+
+```text
+Scene 1 — Hook
+0s–2s
+
+Scene 2 — Getting Ready
+2s–5s
+
+Scene 3 — Product Close-Up
+5s–8s
+
+Scene 4 — Application
+8s–11s
+
+Scene 5 — Final Look
+11s–13s
+
+Scene 6 — CTA
+13s–15s
+
