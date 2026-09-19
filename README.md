@@ -113,57 +113,73 @@ Scene 5 — Final Look
 
 Scene 6 — CTA
 13s–15s
+```
 
 Each scene can contain:
 
-Title
-Start time
-End time
-Script
-Visual prompt
-Camera motion
-Motion speed
-Supported Camera Motion
+- Title
+- Start time
+- End time
+- Script
+- Visual prompt
+- Camera motion
+- Motion speed
+
+## Supported Camera Motion
 
 Currently supported scene motions:
 
+```text
 zoom-in
 zoom-out
 pan-left
 pan-right
 static
+```
 
 Motion speeds:
 
+```text
 slow
 medium
 fast
-Local AI
+```
+
+## Local AI
 
 Creora currently uses Ollama locally.
 
 Recommended model:
 
+```text
 qwen2.5:3b
+```
 
 Ollama endpoint:
 
+```text
 http://localhost:11434/api/generate
+```
 
 This allows the content-generation system to run locally without requiring a paid AI API.
 
-Video Rendering
+## Video Rendering
 
 Creora uses Remotion to create video previews and MP4 exports.
 
 Current output format:
 
+```text
 Resolution: 1080 × 1920
 Aspect Ratio: 9:16
 Frame Rate: 30 FPS
 Codec: H.264
 Format: MP4
-Project Structure
+```
+
+## Project Structure
+
+```text
 src
 ├── app
 │   ├── api
@@ -199,45 +215,67 @@ src
 └── remotion
     ├── index.ts
     └── Root.tsx
-Getting Started
+```
+
+## Getting Started
 
 Clone the repository:
 
+```bash
 git clone YOUR_REPOSITORY_URL
+```
 
 Enter the project:
 
+```bash
 cd creora
+```
 
 Install dependencies:
 
+```bash
 npm install
+```
 
 Start Ollama:
 
+```bash
 ollama serve
+```
 
 Make sure the model is installed:
 
+```bash
 ollama pull qwen2.5:3b
+```
 
 Run the development server:
 
+```bash
 npm run dev
+```
 
 Open:
 
+```text
 http://localhost:3000
-Remotion
+```
+
+## Remotion
 
 To check available Remotion compositions:
 
+```bash
 npx remotion compositions src/remotion/index.ts
+```
 
 The main composition is:
 
+```text
 CreoraFullVideo
-Current Development Stage
+```
+
+## Current Development Stage
 
 Creora is currently an MVP under active development.
 
@@ -245,47 +283,52 @@ The current version can generate scripts, build scenes, animate uploaded images,
 
 At this stage, all scenes can still use the same uploaded image.
 
-Planned Features
-Different image for each scene
-Upload / replace image per scene
-AI-generated scene images
-Creator-focused scenes
-Product-focused scenes
-Automatic scene image selection
-Scene transitions
-Animated captions
-Voiceover
-Background music
-Audio controls
-Branding
-Logo overlays
-Editable project titles
-Scene reordering
-Scene deletion
-Timeline editor
-Export settings
-Project saving
-Templates
-User accounts
-Project dashboard
-Cloud storage
-Creator profiles
-Multiple video formats
-Future Vision
+## Planned Features
+
+- Different image for each scene
+- Upload / replace image per scene
+- AI-generated scene images
+- Creator-focused scenes
+- Product-focused scenes
+- Automatic scene image selection
+- Scene transitions
+- Animated captions
+- Voiceover
+- Background music
+- Audio controls
+- Branding
+- Logo overlays
+- Editable project titles
+- Scene reordering
+- Scene deletion
+- Timeline editor
+- Export settings
+- Project saving
+- Templates
+- User accounts
+- Project dashboard
+- Cloud storage
+- Creator profiles
+- Multiple video formats
+
+## Future Vision
 
 The long-term goal is for Creora to generate complete creator-style videos from a simple prompt.
 
 For example, a user could request:
 
+```text
 Create a 15-second luxury perfume video.
 
 Show the creator getting ready for dinner,
 holding the perfume,
 applying it to her wrist,
 and showing the final look.
+```
 
 Creora could then automatically create:
 
+```text
 Hook
 ↓
 Creator getting ready
@@ -297,21 +340,23 @@ Creator using the product
 Final look
 ↓
 Call to action
+```
 
 Each scene could eventually contain its own generated visual or video clip.
 
-Development Philosophy
+## Development Philosophy
 
 The current development approach focuses on:
 
-Keeping the architecture simple
-Building features incrementally
-Prioritizing local tools where possible
-Avoiding unnecessary API costs
-Creating a clean creator-friendly workflow
-Maintaining editable AI output
-Keeping the final user in control of generated content
-Status
+- Keeping the architecture simple
+- Building features incrementally
+- Prioritizing local tools where possible
+- Avoiding unnecessary API costs
+- Creating a clean creator-friendly workflow
+- Maintaining editable AI output
+- Keeping the final user in control of generated content
+
+## Status
 
 In active development.
 
