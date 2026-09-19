@@ -114,3 +114,22 @@ Scene 5 — Final Look
 Scene 6 — CTA
 13s–15s
 
+##Each scene can contain:
+
+Title
+Start time
+End time
+Script
+Visual prompt
+Camera motion
+Motion speed
+Supported Camera Motion
+
+Currently supported scene motions:
+```text
+zoom-in
+zoom-out
+pan-left
+pan-right
+static
+```text
