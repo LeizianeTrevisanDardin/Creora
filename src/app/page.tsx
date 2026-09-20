@@ -420,7 +420,6 @@ export default function Home() {
 
           return {
             ...current,
-
             scenes:
               updatedScenes,
           };
@@ -524,10 +523,6 @@ export default function Home() {
           );
         }
 
-        // =================================
-        // GET MP4 BLOB
-        // =================================
-
         const videoBlob =
           await response.blob();
 
@@ -539,10 +534,6 @@ export default function Home() {
             "The exported video is empty.",
           );
         }
-
-        // =================================
-        // GET FILE NAME
-        // =================================
 
         const contentDisposition =
           response.headers.get(
@@ -557,10 +548,6 @@ export default function Home() {
         const fileName =
           fileNameMatch?.[1] ||
           `creora-${Date.now()}.mp4`;
-
-        // =================================
-        // DOWNLOAD VIDEO
-        // =================================
 
         const downloadUrl =
           URL.createObjectURL(
@@ -628,7 +615,6 @@ export default function Home() {
             total +
             Math.max(
               1,
-
               scene.end -
                 scene.start,
             ),
@@ -643,25 +629,25 @@ export default function Home() {
       <div className="min-w-0 flex-1">
         <Header />
 
-        <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-7">
+        <main className="mx-auto w-full max-w-[1800px] px-3 py-5 sm:px-4 md:px-5 lg:px-6 xl:px-7">
           {/* =================================
               PAGE HEADER
           ================================= */}
 
-          <div className="mb-6 flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <div className="mb-5 flex flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
                 Create AI Video
               </h1>
 
-              <p className="mt-1 text-sm text-slate-500 sm:text-base">
+              <p className="mt-1 max-w-2xl text-sm text-slate-500 sm:text-base">
                 Turn a photo and an idea
                 into ready-to-post social
                 content.
               </p>
             </div>
 
-            <div className="hidden rotate-[-5deg] text-lg italic text-slate-700 xl:block">
+            <div className="hidden shrink-0 rotate-[-5deg] text-lg italic text-slate-700 2xl:block">
               One idea. Endless content.
 
               <div className="ml-auto mt-1 h-[3px] w-20 rounded-full bg-violet-500" />
@@ -669,78 +655,104 @@ export default function Home() {
           </div>
 
           {/* =================================
-              PROGRESS
+              STEPS
           ================================= */}
 
-          <StepProgress />
+          <div className="overflow-x-auto pb-1">
+            <div className="min-w-[760px] lg:min-w-0">
+              <StepProgress />
+            </div>
+          </div>
 
           {/* =================================
               MAIN EDITOR
           ================================= */}
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.82fr_1fr]">
-            <CreatorInputPanel
-              imagePreview={
-                imagePreview
-              }
-              setImagePreview={
-                setImagePreview
-              }
-              project={
-                project
-              }
-              setProject={
-                setProject
-              }
-              onGenerate={
-                handleGenerate
-              }
-              isGenerating={
-                isGenerating
-              }
-            />
+          <div
+            className="
+              mt-4
+              grid
+              min-w-0
+              grid-cols-1
+              gap-4
+              xl:grid-cols-2
+              2xl:grid-cols-[minmax(320px,1.05fr)_minmax(300px,0.82fr)_minmax(420px,1fr)]
+            "
+          >
+            {/* CREATOR INPUT */}
 
-            <VideoPreview
-              imagePreview={
-                imagePreview
-              }
-            />
+            <div className="min-w-0">
+              <CreatorInputPanel
+                imagePreview={
+                  imagePreview
+                }
+                setImagePreview={
+                  setImagePreview
+                }
+                project={
+                  project
+                }
+                setProject={
+                  setProject
+                }
+                onGenerate={
+                  handleGenerate
+                }
+                isGenerating={
+                  isGenerating
+                }
+              />
+            </div>
 
-            <ScriptPanel
-              key={
-                contentVersion
-              }
-              imagePreview={
-                imagePreview
-              }
-              generatedContent={
-                generatedContent
-              }
-              isGenerating={
-                isGenerating
-              }
-              onRegenerate={
-                handleGenerate
-              }
-              onGenerateScene={
-                handleGenerateScene
-              }
-              isGeneratingScene={
-                isGeneratingScene
-              }
-              generatingSceneId={
-                generatingSceneId
-              }
-              onAddScene={
-                handleAddScene
-              }
-              onUpdateScene={
-                handleUpdateScene
-              }
-              onUpdateScenes={
-                handleUpdateScenes
-              }
-            />
+            {/* VIDEO PREVIEW */}
+
+            <div className="min-w-0">
+              <VideoPreview
+                imagePreview={
+                  imagePreview
+                }
+              />
+            </div>
+
+            {/* SCRIPT PANEL */}
+
+            <div className="min-w-0 xl:col-span-2 2xl:col-span-1">
+              <ScriptPanel
+                key={
+                  contentVersion
+                }
+                imagePreview={
+                  imagePreview
+                }
+                generatedContent={
+                  generatedContent
+                }
+                isGenerating={
+                  isGenerating
+                }
+                onRegenerate={
+                  handleGenerate
+                }
+                onGenerateScene={
+                  handleGenerateScene
+                }
+                isGeneratingScene={
+                  isGeneratingScene
+                }
+                generatingSceneId={
+                  generatingSceneId
+                }
+                onAddScene={
+                  handleAddScene
+                }
+                onUpdateScene={
+                  handleUpdateScene
+                }
+                onUpdateScenes={
+                  handleUpdateScenes
+                }
+              />
+            </div>
           </div>
 
           {/* =================================
@@ -751,16 +763,16 @@ export default function Home() {
             generatedContent &&
             generatedContent.scenes
               .length > 0 && (
-              <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_18px_rgba(20,20,43,0.03)]">
+              <section className="mt-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_18px_rgba(20,20,43,0.03)] sm:p-5 lg:mt-6">
                 {/* HEADER */}
 
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
                       Full Video Preview
                     </p>
 
-                    <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                    <h2 className="mt-1 truncate text-lg font-semibold text-slate-900 sm:text-xl">
                       {
                         generatedContent.title
                       }
@@ -794,8 +806,6 @@ export default function Home() {
                       }
                     </span>
 
-                    {/* EXPORT BUTTON */}
-
                     <button
                       type="button"
                       onClick={
@@ -805,7 +815,7 @@ export default function Home() {
                         isExporting
                       }
                       className={[
-                        "ml-0 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition sm:ml-2",
+                        "flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition",
 
                         isExporting
                           ? "cursor-not-allowed bg-violet-400"
@@ -821,7 +831,9 @@ export default function Home() {
                             className="animate-spin"
                           />
 
-                          Rendering MP4...
+                          <span className="whitespace-nowrap">
+                            Rendering MP4...
+                          </span>
                         </>
                       ) : (
                         <>
@@ -831,7 +843,9 @@ export default function Home() {
                             }
                           />
 
-                          Export MP4
+                          <span className="whitespace-nowrap">
+                            Export MP4
+                          </span>
                         </>
                       )}
                     </button>
@@ -842,10 +856,21 @@ export default function Home() {
                     PLAYER + TIMELINE
                 ================================= */}
 
-                <div className="mt-6 grid gap-6 lg:grid-cols-[360px_1fr]">
+                <div
+                  className="
+                    mt-5
+                    grid
+                    min-w-0
+                    grid-cols-1
+                    gap-5
+                    xl:mt-6
+                    xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]
+                    xl:gap-6
+                  "
+                >
                   {/* PLAYER */}
 
-                  <div className="mx-auto w-full max-w-[360px] lg:mx-0">
+                  <div className="mx-auto w-full max-w-[360px] xl:mx-0">
                     <FullVideoPlayer
                       imageUrl={
                         imagePreview
@@ -858,10 +883,10 @@ export default function Home() {
 
                   {/* RIGHT SIDE */}
 
-                  <div>
+                  <div className="min-w-0">
                     {/* TIMELINE */}
 
-                    <div className="rounded-xl border border-slate-200 p-4">
+                    <div className="rounded-xl border border-slate-200 p-3 sm:p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                         Video Timeline
                       </p>
@@ -876,7 +901,7 @@ export default function Home() {
                               key={
                                 scene.id
                               }
-                              className="flex gap-3 rounded-xl bg-slate-50 p-3"
+                              className="flex min-w-0 gap-3 rounded-xl bg-slate-50 p-3"
                             >
                               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">
                                 {
@@ -886,8 +911,8 @@ export default function Home() {
                               </div>
 
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-3">
-                                  <p className="truncate text-sm font-semibold text-slate-800">
+                                <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                                  <p className="min-w-0 truncate text-sm font-semibold text-slate-800">
                                     {
                                       scene.title
                                     }
@@ -905,7 +930,7 @@ export default function Home() {
                                   </span>
                                 </div>
 
-                                <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-500 sm:line-clamp-2">
                                   {
                                     scene.script
                                   }
@@ -939,12 +964,12 @@ export default function Home() {
 
                     {/* CAPTION */}
 
-                    <div className="mt-4 rounded-xl bg-violet-50 p-4">
+                    <div className="mt-4 rounded-xl bg-violet-50 p-3 sm:p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
                         Caption
                       </p>
 
-                      <p className="mt-2 text-sm leading-6 text-slate-700">
+                      <p className="mt-2 break-words text-sm leading-6 text-slate-700">
                         {
                           generatedContent.caption
                         }
@@ -958,7 +983,7 @@ export default function Home() {
                           ) => (
                             <span
                               key={`${hashtag}-${index}`}
-                              className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-violet-700"
+                              className="max-w-full break-all rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-violet-700"
                             >
                               {
                                 hashtag
@@ -971,7 +996,7 @@ export default function Home() {
 
                     {/* EXPORT INFO */}
 
-                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
                       <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                           <Download
@@ -981,7 +1006,7 @@ export default function Home() {
                           />
                         </div>
 
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-800">
                             Ready for export
                           </p>
@@ -1007,7 +1032,7 @@ export default function Home() {
               EDITOR CONTROLS
           ================================= */}
 
-          <div className="mt-4 xl:ml-[calc(33.5%+8px)]">
+          <div className="mt-4 min-w-0">
             <EditorControls />
           </div>
         </main>
