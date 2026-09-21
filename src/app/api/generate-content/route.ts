@@ -2,26 +2,32 @@ import {
   NextResponse,
 } from "next/server";
 
+export const runtime =
+  "nodejs";
+
 export async function POST(
   request: Request,
 ) {
   try {
+    const body =
+      await request.json();
+
     const {
       creatorDescription,
       videoPrompt,
       platform,
       duration,
       style,
-    } = await request.json();
+    } = body;
 
     if (
-      !creatorDescription?.trim() ||
-      !videoPrompt?.trim()
+      !creatorDescription ||
+      !videoPrompt
     ) {
       return NextResponse.json(
         {
           error:
-            "Creator description and video idea are required.",
+            "Creator description and video prompt are required.",
         },
         {
           status: 400,
@@ -30,187 +36,161 @@ export async function POST(
     }
 
     const prompt = `
-You are the creative director for Creora,
-an AI social media content studio.
+You are an expert short-form social media video director.
 
-Create a short-form social media video plan.
+Create a complete short-form video plan.
 
-CREATOR:
+Creator:
 ${creatorDescription}
 
-VIDEO IDEA:
+Video idea:
 ${videoPrompt}
 
-PLATFORM:
+Platform:
 ${platform}
 
-VIDEO LENGTH:
+Target duration:
 ${duration} seconds
 
-STYLE:
+Style:
 ${style}
 
-Requirements:
+Return ONLY valid JSON.
 
-- Create a strong hook in the first seconds.
-- Use natural creator language.
-- Make the script fit the requested duration.
-- Break the video into clear scenes.
-- Scene timings must fit inside the total duration.
-- Every scene must include a visualPrompt.
-
-The visualPrompt should describe:
-- creator action
-- environment
-- camera angle
-- camera movement
-- lighting
-- facial expression
-- visual style
-
-For every scene, also choose a motion style.
-
-The motion.camera value MUST be exactly one of:
-- zoom-in
-- zoom-out
-- pan-left
-- pan-right
-- static
-
-The motion.speed value MUST be exactly one of:
-- slow
-- medium
-- fast
-
-Motion guidance:
-
-- Use zoom-in for emotional moments,
-  hooks, product details, or emphasis.
-
-- Use zoom-out for reveals,
-  endings, or wider lifestyle moments.
-
-- Use pan-left or pan-right
-  when the scene should feel cinematic.
-
-- Use static sparingly.
-
-- Luxury and cinematic videos should
-  generally use slower movement.
-
-- UGC videos can use medium
-  or faster movement.
-
-- Avoid using the exact same camera
-  motion for every scene unless it
-  genuinely makes sense.
-
-Also:
-
-- Create a short social media caption.
-- Create 4 to 7 relevant hashtags.
-- Do not repeat hashtags.
-- Keep everything suitable for ${platform}.
-- Do not include markdown.
-- Do not include explanations outside JSON.
-- Return ONLY valid JSON.
-
-Return exactly this structure:
+The JSON must have exactly this structure:
 
 {
-  "title": "string",
-  "hook": "string",
-  "caption": "string",
-  "hashtags": [
-    "#example",
-    "#example2"
-  ],
+  "title": "Project title",
+  "hook": "Strong opening hook",
+  "caption": "Social media caption",
+  "hashtags": ["#example"],
   "scenes": [
     {
       "id": 1,
-      "title": "Hook",
+      "title": "Scene title",
       "start": 0,
       "end": 2,
-      "script": "spoken words",
-      "visualPrompt": "detailed visual generation prompt",
+      "script": "Short spoken dialogue",
+      "visualPrompt": "Detailed visual description",
       "motion": {
         "camera": "zoom-in",
         "speed": "slow"
+      },
+      "transition": {
+        "type": "cut",
+        "duration": 0.3
       }
     }
   ]
 }
 
-Important:
+Rules:
 
-- Scene IDs must start at 1
-  and increase by 1.
+- Total scene timing should approximately match ${duration} seconds.
+- Scenes must be chronological.
+- The first scene must be the hook.
+- Create enough scenes to make the video visually interesting.
+- Dialogue must be short and natural.
+- Avoid repetitive dialogue.
+- Avoid duplicate hashtags.
 
-- Scene start and end times
-  must be numbers.
+Camera motion must use ONLY:
 
-- The first scene must start at 0.
+"zoom-in"
+"zoom-out"
+"pan-left"
+"pan-right"
+"static"
 
-- The final scene must not end
-  after ${duration} seconds.
+Motion speed must use ONLY:
 
-- The combined scenes should cover
-  approximately the full
-  ${duration}-second video.
+"slow"
+"medium"
+"fast"
 
-- motion.camera must use only
-  the allowed values.
+Transition type must use ONLY:
 
-- motion.speed must use only
-  the allowed values.
+"cut"
+"fade"
+"dissolve"
+"slide-left"
+"slide-right"
+
+Transition guidance:
+
+- Scene 1 should normally use "cut".
+- Cinematic videos should favor fade and dissolve.
+- UGC videos should favor cut and quick fade.
+- Lifestyle videos may use fade, dissolve or slide.
+- Product demos should favor cut, fade and slide.
+- Do not use the same transition on every scene.
+- Keep transitions subtle.
+- Transition duration should normally be between 0.2 and 0.6 seconds.
+
+Camera guidance:
+
+- Strong hooks can use zoom-in.
+- Product details can use zoom-in.
+- Reveals can use zoom-out.
+- Pan movements work well for lifestyle and cinematic scenes.
+- Luxury and cinematic scenes should generally use slower movement.
+- Avoid using exactly the same camera movement on every scene.
+
+Visual prompts should describe the actual visual scene.
+
+If the prompt mentions a creator or person using a product, include the person in relevant visual prompts.
+
+Return ONLY JSON.
 `;
 
     const ollamaResponse =
       await fetch(
         "http://localhost:11434/api/generate",
         {
-          method: "POST",
+          method:
+            "POST",
 
           headers: {
             "Content-Type":
               "application/json",
           },
 
-          body: JSON.stringify({
-            model:
-              "qwen2.5:3b",
+          body:
+            JSON.stringify({
+              model:
+                "qwen2.5:3b",
 
-            prompt,
+              prompt,
 
-            stream:
-              false,
+              stream:
+                false,
 
-            format:
-              "json",
+              format:
+                "json",
 
-            options: {
-              temperature:
-                0.7,
-            },
-          }),
+              options: {
+                temperature:
+                  0.7,
+              },
+            }),
         },
       );
 
     if (
       !ollamaResponse.ok
     ) {
-      const errorText =
+      const text =
         await ollamaResponse.text();
 
       console.error(
-        "Ollama error:",
-        errorText,
+        "OLLAMA ERROR:",
+        text,
       );
 
       return NextResponse.json(
         {
           error:
-            "Ollama could not generate content.",
+            "Ollama failed to generate content.",
         },
         {
           status: 500,
@@ -221,24 +201,27 @@ Important:
     const ollamaData =
       await ollamaResponse.json();
 
-    const generatedContent =
+    const parsed =
       JSON.parse(
         ollamaData.response,
       );
 
     return NextResponse.json(
-      generatedContent,
+      parsed,
     );
   } catch (error) {
     console.error(
-      "Generate content error:",
+      "GENERATE CONTENT ERROR:",
       error,
     );
 
     return NextResponse.json(
       {
         error:
-          "Failed to generate content.",
+          error instanceof
+          Error
+            ? error.message
+            : "Failed to generate content.",
       },
       {
         status: 500,

@@ -1,14 +1,17 @@
 "use client";
 
 import {
+  ImagePlus,
   Pencil,
   Plus,
   RefreshCw,
   Sparkles,
+  Undo2,
   X,
 } from "lucide-react";
 
 import {
+  ChangeEvent,
   useState,
 } from "react";
 
@@ -17,6 +20,7 @@ import type {
   GeneratedContent,
   MotionSpeed,
   Scene,
+  TransitionType,
 } from "@/app/page";
 
 import ScenePlayer from "@/components/video/ScenePlayer";
@@ -160,6 +164,20 @@ export default function ScriptPanel({
       "slow",
     );
 
+  const [
+    newSceneTransition,
+    setNewSceneTransition,
+  ] =
+    useState<TransitionType>(
+      "fade",
+    );
+
+  const [
+    newTransitionDuration,
+    setNewTransitionDuration,
+  ] =
+    useState(0.4);
+
   // =================================
   // SELECTED SCENE
   // =================================
@@ -172,7 +190,51 @@ export default function ScriptPanel({
     ) ?? null;
 
   // =================================
-  // OPEN PROMPT EDITOR
+  // IMAGE UPLOAD
+  // =================================
+
+  const handleSceneImageUpload =
+    (
+      event:
+        ChangeEvent<HTMLInputElement>,
+      sceneId: number,
+    ) => {
+      const file =
+        event.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        () => {
+          if (
+            typeof reader.result ===
+            "string"
+          ) {
+            onUpdateScene(
+              sceneId,
+              {
+                imageUrl:
+                  reader.result,
+              },
+            );
+          }
+        };
+
+      reader.readAsDataURL(
+        file,
+      );
+
+      event.target.value =
+        "";
+    };
+
+  // =================================
+  // EDIT PROMPT
   // =================================
 
   const handleOpenPromptEditor =
@@ -189,10 +251,6 @@ export default function ScriptPanel({
         true,
       );
     };
-
-  // =================================
-  // SAVE PROMPT
-  // =================================
 
   const handleSavePrompt =
     () => {
@@ -225,7 +283,7 @@ export default function ScriptPanel({
     };
 
   // =================================
-  // OPEN SCRIPT EDITOR
+  // EDIT SCRIPT
   // =================================
 
   const handleOpenScriptEditor =
@@ -258,10 +316,6 @@ export default function ScriptPanel({
       );
     };
 
-  // =================================
-  // SAVE SCRIPTS
-  // =================================
-
   const handleSaveScripts =
     () => {
       if (!generatedContent) {
@@ -271,14 +325,15 @@ export default function ScriptPanel({
       const hasEmptyScript =
         generatedContent.scenes.some(
           (scene) => {
-            const value =
+            const draft =
               scriptDrafts[
                 scene.id
               ];
 
             return (
-              value !== undefined &&
-              !value.trim()
+              draft !==
+                undefined &&
+              !draft.trim()
             );
           },
         );
@@ -314,7 +369,7 @@ export default function ScriptPanel({
     };
 
   // =================================
-  // GENERATE SELECTED SCENE
+  // GENERATE SCENE
   // =================================
 
   const handleGenerateSelectedScene =
@@ -329,7 +384,7 @@ export default function ScriptPanel({
     };
 
   // =================================
-  // ADD NEW SCENE
+  // ADD SCENE
   // =================================
 
   const handleAddNewScene =
@@ -361,8 +416,8 @@ export default function ScriptPanel({
 
       const lastScene =
         generatedContent.scenes[
-          generatedContent.scenes.length -
-            1
+          generatedContent
+            .scenes.length - 1
         ];
 
       const start =
@@ -387,11 +442,17 @@ export default function ScriptPanel({
 
       const newScene:
         Scene = {
-        id: nextId,
+        id:
+          nextId,
+
         title,
+
         start,
+
         end,
+
         script,
+
         visualPrompt,
 
         motion: {
@@ -400,6 +461,14 @@ export default function ScriptPanel({
 
           speed:
             newSceneSpeed,
+        },
+
+        transition: {
+          type:
+            newSceneTransition,
+
+          duration:
+            newTransitionDuration,
         },
       };
 
@@ -427,6 +496,14 @@ export default function ScriptPanel({
         "slow",
       );
 
+      setNewSceneTransition(
+        "fade",
+      );
+
+      setNewTransitionDuration(
+        0.4,
+      );
+
       setIsAddingScene(
         false,
       );
@@ -439,53 +516,22 @@ export default function ScriptPanel({
   if (isGenerating) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="flex min-h-[520px] flex-col items-center justify-center text-center">
-          <div className="relative mb-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-50">
-              <Sparkles
-                size={28}
-                className="text-violet-600"
-              />
-            </div>
-
-            <div className="absolute inset-0 animate-ping rounded-full border border-violet-300 opacity-30" />
+        <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-50">
+            <Sparkles
+              size={26}
+              className="text-violet-600"
+            />
           </div>
 
-          <h2 className="text-lg font-semibold">
+          <h2 className="mt-4 text-lg font-semibold">
             Creating your content
           </h2>
 
-          <p className="mt-2 max-w-[280px] text-sm leading-6 text-slate-500">
-            Creora is analyzing your
-            idea and preparing your
-            social video.
+          <p className="mt-2 text-sm text-slate-500">
+            Building your script and
+            scenes.
           </p>
-
-          <div className="mt-7 w-full max-w-[320px] space-y-3 text-left">
-            <GeneratingStep
-              label="Analyzing your idea"
-              delay="0ms"
-            />
-
-            <GeneratingStep
-              label="Writing the hook"
-              delay="250ms"
-            />
-
-            <GeneratingStep
-              label="Building the scenes"
-              delay="500ms"
-            />
-
-            <GeneratingStep
-              label="Preparing social caption"
-              delay="750ms"
-            />
-          </div>
-
-          <div className="mt-7 h-1.5 w-full max-w-[320px] overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-2/3 animate-pulse rounded-full bg-violet-500" />
-          </div>
         </div>
       </section>
     );
@@ -498,20 +544,23 @@ export default function ScriptPanel({
   if (!generatedContent) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="flex min-h-[520px] flex-col items-center justify-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-50 text-2xl">
-            ✨
+        <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-50">
+            <Sparkles
+              size={24}
+              className="text-violet-600"
+            />
           </div>
 
-          <h2 className="text-base font-semibold">
+          <h2 className="mt-4 text-base font-semibold">
             Your AI script will appear
             here
           </h2>
 
-          <p className="mt-2 max-w-[260px] text-sm leading-6 text-slate-500">
-            Add your creator details
-            and video idea, then click
-            Generate Video.
+          <p className="mt-2 max-w-[280px] text-sm leading-6 text-slate-500">
+            Upload an image, describe
+            your video and generate
+            your content.
           </p>
         </div>
       </section>
@@ -520,16 +569,18 @@ export default function ScriptPanel({
 
   return (
     <>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        {/* HEADER */}
+      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        {/* =================================
+            HEADER
+        ================================= */}
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="font-semibold text-slate-900">
               AI Script & Scenes
             </h2>
 
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 truncate text-xs text-slate-400">
               {
                 generatedContent.title
               }
@@ -541,7 +592,7 @@ export default function ScriptPanel({
             onClick={
               onRegenerate
             }
-            className="flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-xs font-medium text-violet-700 transition hover:bg-violet-50"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-xs font-medium text-violet-700 transition hover:bg-violet-50"
           >
             <RefreshCw
               size={14}
@@ -551,45 +602,17 @@ export default function ScriptPanel({
           </button>
         </div>
 
-        {/* TABS */}
-
-        <div className="mt-4 flex gap-1 rounded-xl bg-slate-50 p-1">
-          {[
-            "Script",
-            `Scenes (${generatedContent.scenes.length})`,
-            "Captions",
-            "Music",
-          ].map(
-            (
-              tab,
-              index,
-            ) => (
-              <button
-                type="button"
-                key={tab}
-                className={[
-                  "flex-1 rounded-lg px-2 py-2 text-xs",
-
-                  index === 0
-                    ? "bg-white font-medium text-violet-700 shadow-sm"
-                    : "text-slate-500",
-                ].join(" ")}
-              >
-                {tab}
-              </button>
-            ),
-          )}
-        </div>
-
-        {/* SCRIPT */}
+        {/* =================================
+            SCRIPT
+        ================================= */}
 
         <div className="mt-4 rounded-xl border border-slate-200 p-4">
           <div className="mb-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-violet-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
               Hook
             </p>
 
-            <p className="mt-1 text-sm leading-6 text-slate-700">
+            <p className="mt-2 text-sm leading-6 text-slate-700">
               {
                 generatedContent.hook
               }
@@ -598,21 +621,33 @@ export default function ScriptPanel({
 
           <div className="space-y-4">
             {generatedContent.scenes.map(
-              (scene) => (
+              (
+                scene,
+                index,
+              ) => (
                 <div
                   key={
                     scene.id
                   }
                   className="border-t border-slate-100 pt-4"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {
-                        scene.title
-                      }
-                    </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {index ===
+                        0 && (
+                        <span className="rounded-full bg-violet-100 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-violet-700">
+                          Hook
+                        </span>
+                      )}
 
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
+                      <p className="truncate text-sm font-semibold text-slate-800">
+                        {
+                          scene.title
+                        }
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
                       {
                         scene.start
                       }
@@ -630,23 +665,43 @@ export default function ScriptPanel({
                     }
                   </p>
 
-                  {scene.motion && (
-                    <div className="mt-2 flex gap-2">
-                      <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-medium text-violet-700">
-                        {
-                          scene.motion
-                            .camera
-                        }
-                      </span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {scene.motion && (
+                      <>
+                        <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-medium text-violet-700">
+                          {
+                            scene
+                              .motion
+                              .camera
+                          }
+                        </span>
 
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
+                          {
+                            scene
+                              .motion
+                              .speed
+                          }
+                        </span>
+                      </>
+                    )}
+
+                    {scene.transition && (
+                      <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-700">
                         {
-                          scene.motion
-                            .speed
+                          scene
+                            .transition
+                            .type
                         }
                       </span>
-                    </div>
-                  )}
+                    )}
+
+                    {scene.audioUrl && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700">
+                        Voice
+                      </span>
+                    )}
+                  </div>
                 </div>
               ),
             )}
@@ -667,62 +722,202 @@ export default function ScriptPanel({
           </button>
         </div>
 
-        {/* SCENE PREVIEW */}
+        {/* =================================
+            COMPACT SCENE PREVIEW
+        ================================= */}
 
-        <div className="mt-5">
-          <h3 className="mb-3 text-sm font-semibold">
-            Scene Preview
-          </h3>
+        <div className="mt-6">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Scene Preview
+              </h3>
 
-          <div className="flex gap-2 overflow-x-auto pb-2">
+              <p className="mt-1 text-xs text-slate-400">
+                Select a scene to edit
+                its image and settings.
+              </p>
+            </div>
+
+            <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-medium text-violet-700">
+              {
+                generatedContent.scenes
+                  .length
+              }{" "}
+              scenes
+            </span>
+          </div>
+
+          <div
+            className="
+              grid
+              grid-cols-2
+              gap-3
+              sm:grid-cols-3
+              md:grid-cols-4
+              xl:grid-cols-5
+              2xl:grid-cols-4
+            "
+          >
             {generatedContent.scenes.map(
-              (scene) => (
-                <button
-                  type="button"
-                  key={
-                    scene.id
-                  }
-                  onClick={() =>
-                    setSelectedSceneId(
-                      scene.id,
-                    )
-                  }
-                  className={[
-                    "w-[96px] shrink-0 rounded-xl text-left transition",
+              (
+                scene,
+                index,
+              ) => {
+                const sceneImage =
+                  scene.imageUrl ||
+                  imagePreview;
 
-                    selectedSceneId ===
-                    scene.id
-                      ? "ring-2 ring-violet-500 ring-offset-2"
-                      : "opacity-80 hover:opacity-100",
-                  ].join(" ")}
-                >
-                  <div className="flex aspect-[9/12] items-end overflow-hidden rounded-xl bg-gradient-to-b from-violet-100 via-rose-100 to-slate-800 p-2">
-                    <p className="line-clamp-3 text-[10px] font-medium leading-4 text-white">
-                      {
-                        scene.script
+                const isSelected =
+                  selectedSceneId ===
+                  scene.id;
+
+                return (
+                  <div
+                    key={
+                      scene.id
+                    }
+                    className={[
+                      "min-w-0 overflow-hidden rounded-xl border bg-white transition",
+
+                      isSelected
+                        ? "border-violet-500 ring-2 ring-violet-100"
+                        : "border-slate-200 hover:border-violet-300",
+                    ].join(
+                      " ",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedSceneId(
+                          scene.id,
+                        )
                       }
-                    </p>
+                      className="block w-full text-left"
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                        {sceneImage ? (
+                          <img
+                            src={
+                              sceneImage
+                            }
+                            alt={
+                              scene.title
+                            }
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-slate-300">
+                            <ImagePlus
+                              size={20}
+                            />
+                          </div>
+                        )}
+
+                        <div className="absolute left-2 top-2">
+                          <span className="rounded-full bg-black/65 px-2 py-1 text-[9px] font-semibold text-white backdrop-blur">
+                            {
+                              index +
+                              1
+                            }
+                          </span>
+                        </div>
+
+                        {scene.audioUrl && (
+                          <div className="absolute right-2 top-2">
+                            <span className="rounded-full bg-emerald-500/90 px-2 py-1 text-[8px] font-semibold text-white backdrop-blur">
+                              VO
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-2.5">
+                        <p className="line-clamp-1 text-[11px] font-semibold text-slate-800">
+                          {
+                            scene.title
+                          }
+                        </p>
+
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <p className="text-[9px] text-slate-400">
+                            {
+                              scene.start
+                            }
+                            s–
+                            {
+                              scene.end
+                            }
+                            s
+                          </p>
+
+                          {scene.transition && (
+                            <span className="truncate text-[8px] font-medium text-amber-600">
+                              {
+                                scene
+                                  .transition
+                                  .type
+                              }
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="border-t border-slate-100 p-2">
+                      <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1.5 text-[9px] font-medium text-violet-700 transition hover:bg-violet-100">
+                        <ImagePlus
+                          size={11}
+                        />
+
+                        {scene.imageUrl
+                          ? "Replace"
+                          : "Upload"}
+
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(
+                            event,
+                          ) =>
+                            handleSceneImageUpload(
+                              event,
+                              scene.id,
+                            )
+                          }
+                        />
+                      </label>
+
+                      {scene.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateScene(
+                              scene.id,
+                              {
+                                imageUrl:
+                                  undefined,
+                              },
+                            )
+                          }
+                          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg px-2 py-1 text-[9px] font-medium text-slate-500 transition hover:bg-slate-50"
+                        >
+                          <Undo2
+                            size={10}
+                          />
+
+                          Main image
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                  <p className="mt-2 text-[11px] font-semibold">
-                    {
-                      scene.title
-                    }
-                  </p>
-
-                  <p className="text-[10px] text-slate-400">
-                    {
-                      scene.start
-                    }
-                    s–
-                    {
-                      scene.end
-                    }
-                    s
-                  </p>
-                </button>
-              ),
+                );
+              },
             )}
+
+            {/* ADD SCENE */}
 
             <button
               type="button"
@@ -731,36 +926,41 @@ export default function ScriptPanel({
                   true,
                 )
               }
-              className="flex aspect-[9/12] w-[96px] shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 text-xs text-slate-500 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700"
+              className="flex min-h-[150px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-3 text-center text-slate-500 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700"
             >
-              <Plus
-                size={20}
-                className="mb-2"
-              />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white">
+                <Plus
+                  size={15}
+                />
+              </div>
 
-              Add Scene
+              <p className="mt-2 text-[11px] font-semibold">
+                Add Scene
+              </p>
             </button>
           </div>
         </div>
 
-        {/* SELECTED SCENE */}
+        {/* =================================
+            SELECTED SCENE
+        ================================= */}
 
         {selectedScene && (
-          <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50/50 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
+          <div className="mt-6 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
-                  Visual Prompt
+                  Selected Scene
                 </p>
 
-                <p className="mt-1 text-sm font-semibold text-slate-800">
+                <h3 className="mt-1 text-base font-semibold text-slate-900">
                   {
                     selectedScene.title
                   }
-                </p>
+                </h3>
               </div>
 
-              <span className="rounded-full bg-white px-2.5 py-1 text-[10px] text-slate-500">
+              <span className="w-fit rounded-full bg-white px-2.5 py-1 text-[10px] text-slate-500">
                 {
                   selectedScene.start
                 }
@@ -772,66 +972,365 @@ export default function ScriptPanel({
               </span>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              {
-                selectedScene.visualPrompt
-              }
-            </p>
+            {/* =================================
+                COMPACT IMAGE
+            ================================= */}
 
-            {selectedScene.motion && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-violet-700">
-                  Camera:{" "}
-                  {
-                    selectedScene
-                      .motion.camera
-                  }
-                </span>
-
-                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600">
-                  Speed:{" "}
-                  {
-                    selectedScene
-                      .motion.speed
-                  }
-                </span>
-              </div>
-            )}
-
-            {imagePreview && (
-              <div className="mt-5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Scene Motion Preview
+            <div className="mt-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold text-slate-600">
+                  Scene Image
                 </p>
 
-                <div className="mx-auto max-w-[280px]">
-                  <ScenePlayer
-                    imageUrl={
-                      imagePreview
-                    }
-                    title={
-                      selectedScene.title
-                    }
-                    script={
-                      selectedScene.script
-                    }
-                    durationSeconds={
-                      Math.max(
-                        1,
+                {selectedScene.imageUrl ? (
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-medium text-emerald-700">
+                    Custom image
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-medium text-slate-500">
+                    Main image
+                  </span>
+                )}
+              </div>
 
-                        selectedScene.end -
-                          selectedScene.start,
+              <div className="mt-3 flex justify-center">
+                <div className="w-full max-w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  {selectedScene.imageUrl ||
+                  imagePreview ? (
+                    <img
+                      src={
+                        selectedScene.imageUrl ||
+                        imagePreview ||
+                        ""
+                      }
+                      alt={
+                        selectedScene.title
+                      }
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-[4/3] items-center justify-center text-slate-300">
+                      <ImagePlus
+                        size={28}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mx-auto mt-3 grid max-w-[420px] gap-2 sm:grid-cols-2">
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-xs font-medium text-violet-700 transition hover:bg-violet-50">
+                  <ImagePlus
+                    size={14}
+                  />
+
+                  {selectedScene.imageUrl
+                    ? "Replace Image"
+                    : "Upload Image"}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(
+                      event,
+                    ) =>
+                      handleSceneImageUpload(
+                        event,
+                        selectedScene.id,
                       )
                     }
-                    motion={
-                      selectedScene.motion
-                    }
                   />
+                </label>
+
+                <button
+                  type="button"
+                  disabled={
+                    !selectedScene.imageUrl
+                  }
+                  onClick={() =>
+                    onUpdateScene(
+                      selectedScene.id,
+                      {
+                        imageUrl:
+                          undefined,
+                      },
+                    )
+                  }
+                  className={[
+                    "flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-medium transition",
+
+                    selectedScene.imageUrl
+                      ? "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300",
+                  ].join(
+                    " ",
+                  )}
+                >
+                  <Undo2
+                    size={13}
+                  />
+
+                  Use Main Image
+                </button>
+              </div>
+            </div>
+
+            {/* =================================
+                VOICEOVER STATUS
+            ================================= */}
+
+            {selectedScene.audioUrl && (
+              <div className="mx-auto mt-5 max-w-[620px] rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-700">
+                      Voiceover Ready
+                    </p>
+
+                    <p className="mt-1 text-[10px] text-emerald-600">
+                      Audio synced to this
+                      scene.
+                    </p>
+                  </div>
+
+                  {selectedScene.audioDuration && (
+                    <span className="rounded-full bg-white px-2 py-1 text-[10px] font-medium text-emerald-700">
+                      {
+                        selectedScene.audioDuration.toFixed(
+                          2,
+                        )
+                      }
+                      s
+                    </span>
+                  )}
                 </div>
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            {/* =================================
+                TRANSITION
+            ================================= */}
+
+            <div className="mx-auto mt-5 max-w-[620px] rounded-xl border border-amber-100 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">
+                Scene Transition
+              </p>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-slate-600">
+                    Transition
+                  </label>
+
+                  <select
+                    value={
+                      selectedScene
+                        .transition
+                        ?.type ??
+                      "cut"
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      onUpdateScene(
+                        selectedScene.id,
+                        {
+                          transition: {
+                            type:
+                              event
+                                .target
+                                .value as TransitionType,
+
+                            duration:
+                              selectedScene
+                                .transition
+                                ?.duration ??
+                              0.4,
+                          },
+                        },
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-violet-400"
+                  >
+                    <option value="cut">
+                      Cut
+                    </option>
+
+                    <option value="fade">
+                      Fade
+                    </option>
+
+                    <option value="dissolve">
+                      Dissolve
+                    </option>
+
+                    <option value="slide-left">
+                      Slide Left
+                    </option>
+
+                    <option value="slide-right">
+                      Slide Right
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-slate-600">
+                    Duration
+                  </label>
+
+                  <select
+                    value={
+                      selectedScene
+                        .transition
+                        ?.duration ??
+                      0.4
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      onUpdateScene(
+                        selectedScene.id,
+                        {
+                          transition: {
+                            type:
+                              selectedScene
+                                .transition
+                                ?.type ??
+                              "fade",
+
+                            duration:
+                              Number(
+                                event
+                                  .target
+                                  .value,
+                              ),
+                          },
+                        },
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-violet-400"
+                  >
+                    <option value="0.2">
+                      0.2 sec
+                    </option>
+
+                    <option value="0.3">
+                      0.3 sec
+                    </option>
+
+                    <option value="0.4">
+                      0.4 sec
+                    </option>
+
+                    <option value="0.5">
+                      0.5 sec
+                    </option>
+
+                    <option value="0.6">
+                      0.6 sec
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* =================================
+                VISUAL PROMPT
+            ================================= */}
+
+            <div className="mx-auto mt-5 max-w-[620px]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Visual Prompt
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {
+                  selectedScene.visualPrompt
+                }
+              </p>
+            </div>
+
+            {/* =================================
+                MOTION TAGS
+            ================================= */}
+
+            <div className="mx-auto mt-3 flex max-w-[620px] flex-wrap gap-2">
+              {selectedScene.motion && (
+                <>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-violet-700">
+                    Camera:{" "}
+                    {
+                      selectedScene
+                        .motion.camera
+                    }
+                  </span>
+
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600">
+                    Speed:{" "}
+                    {
+                      selectedScene
+                        .motion.speed
+                    }
+                  </span>
+                </>
+              )}
+
+              {selectedScene.transition && (
+                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium text-amber-700">
+                  Transition:{" "}
+                  {
+                    selectedScene
+                      .transition.type
+                  }
+                </span>
+              )}
+            </div>
+
+            {/* =================================
+                MOTION PREVIEW
+            ================================= */}
+
+            {(selectedScene.imageUrl ||
+              imagePreview) && (
+              <div className="mx-auto mt-5 max-w-[280px]">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Scene Motion Preview
+                </p>
+
+                <ScenePlayer
+                  imageUrl={
+                    selectedScene.imageUrl ||
+                    imagePreview ||
+                    ""
+                  }
+                  title={
+                    selectedScene.title
+                  }
+                  script={
+                    selectedScene.script
+                  }
+                  durationSeconds={
+                    Math.max(
+                      1,
+
+                      selectedScene.end -
+                        selectedScene.start,
+                    )
+                  }
+                  motion={
+                    selectedScene.motion
+                  }
+                />
+              </div>
+            )}
+
+            {/* =================================
+                ACTIONS
+            ================================= */}
+
+            <div className="mx-auto mt-4 flex max-w-[620px] flex-wrap gap-2">
               <button
                 type="button"
                 onClick={
@@ -840,13 +1339,7 @@ export default function ScriptPanel({
                 disabled={
                   isGeneratingScene
                 }
-                className={[
-                  "rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white",
-
-                  isGeneratingScene
-                    ? "cursor-not-allowed opacity-60"
-                    : "hover:bg-violet-700",
-                ].join(" ")}
+                className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-violet-700 disabled:opacity-60"
               >
                 {generatingSceneId ===
                 selectedScene.id
@@ -859,7 +1352,10 @@ export default function ScriptPanel({
                 onClick={
                   handleOpenPromptEditor
                 }
-                className="flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-medium text-violet-700 hover:bg-violet-50"
+                disabled={
+                  isGeneratingScene
+                }
+                className="flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-medium text-violet-700 transition hover:bg-violet-50 disabled:opacity-50"
               >
                 <Pencil
                   size={13}
@@ -871,7 +1367,9 @@ export default function ScriptPanel({
           </div>
         )}
 
-        {/* SOCIAL CAPTION */}
+        {/* =================================
+            SOCIAL CAPTION
+        ================================= */}
 
         <div className="mt-5 rounded-xl bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -902,18 +1400,20 @@ export default function ScriptPanel({
         </div>
       </section>
 
-      {/* EDIT SCRIPT MODAL */}
+      {/* =================================
+          EDIT SCRIPT MODAL
+      ================================= */}
 
       {isEditingScript && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-[680px] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase text-violet-600">
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
                   Edit Script
                 </p>
 
-                <h3 className="mt-1 text-lg font-semibold">
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">
                   Edit your video script
                 </h3>
               </div>
@@ -925,6 +1425,7 @@ export default function ScriptPanel({
                     false,
                   )
                 }
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100"
               >
                 <X
                   size={18}
@@ -932,31 +1433,42 @@ export default function ScriptPanel({
               </button>
             </div>
 
-            <div className="mt-5 space-y-5">
+            <div className="mt-5 space-y-4">
               {generatedContent.scenes.map(
-                (scene) => (
+                (
+                  scene,
+                  index,
+                ) => (
                   <div
                     key={
                       scene.id
                     }
                     className="rounded-xl border border-slate-200 p-4"
                   >
-                    <p className="text-sm font-semibold">
-                      {
-                        scene.title
-                      }
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-800">
+                        Scene{" "}
+                        {
+                          index +
+                          1
+                        }
+                        :{" "}
+                        {
+                          scene.title
+                        }
+                      </p>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      {
-                        scene.start
-                      }
-                      s–
-                      {
-                        scene.end
-                      }
-                      s
-                    </p>
+                      <span className="text-[10px] text-slate-400">
+                        {
+                          scene.start
+                        }
+                        s–
+                        {
+                          scene.end
+                        }
+                        s
+                      </span>
+                    </div>
 
                     <textarea
                       value={
@@ -980,7 +1492,7 @@ export default function ScriptPanel({
                           }),
                         )
                       }
-                      className="mt-3 min-h-[100px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                      className="mt-3 min-h-[100px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm leading-6 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
                     />
                   </div>
                 ),
@@ -995,7 +1507,7 @@ export default function ScriptPanel({
                     false,
                   )
                 }
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -1005,7 +1517,7 @@ export default function ScriptPanel({
                 onClick={
                   handleSaveScripts
                 }
-                className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
+                className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
               >
                 Save Script
               </button>
@@ -1014,19 +1526,21 @@ export default function ScriptPanel({
         </div>
       )}
 
-      {/* EDIT PROMPT MODAL */}
+      {/* =================================
+          EDIT PROMPT MODAL
+      ================================= */}
 
       {isEditingPrompt &&
         selectedScene && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
             <div className="w-full max-w-[620px] rounded-2xl bg-white p-5 shadow-2xl">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase text-violet-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
                     Edit Visual Prompt
                   </p>
 
-                  <h3 className="mt-1 text-lg font-semibold">
+                  <h3 className="mt-1 text-lg font-semibold text-slate-900">
                     {
                       selectedScene.title
                     }
@@ -1040,6 +1554,7 @@ export default function ScriptPanel({
                       false,
                     )
                   }
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100"
                 >
                   <X
                     size={18}
@@ -1055,7 +1570,8 @@ export default function ScriptPanel({
                   event,
                 ) =>
                   setPromptDraft(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 className="mt-5 min-h-[220px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm leading-6 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
@@ -1069,7 +1585,7 @@ export default function ScriptPanel({
                       false,
                     )
                   }
-                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
@@ -1079,7 +1595,7 @@ export default function ScriptPanel({
                   onClick={
                     handleSavePrompt
                   }
-                  className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
+                  className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
                 >
                   Save Prompt
                 </button>
@@ -1088,18 +1604,20 @@ export default function ScriptPanel({
           </div>
         )}
 
-      {/* ADD SCENE MODAL */}
+      {/* =================================
+          ADD SCENE MODAL
+      ================================= */}
 
       {isAddingScene && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-[620px] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase text-violet-600">
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
                   Add Scene
                 </p>
 
-                <h3 className="mt-1 text-lg font-semibold">
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">
                   Create a new scene
                 </h3>
               </div>
@@ -1111,6 +1629,7 @@ export default function ScriptPanel({
                     false,
                   )
                 }
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100"
               >
                 <X
                   size={18}
@@ -1118,157 +1637,269 @@ export default function ScriptPanel({
               </button>
             </div>
 
-            <div className="mt-5 space-y-5">
-              <input
-                value={
-                  newSceneTitle
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setNewSceneTitle(
-                    event.target.value,
-                  )
-                }
-                placeholder="Scene title"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              />
-
-              <textarea
-                value={
-                  newSceneScript
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setNewSceneScript(
-                    event.target.value,
-                  )
-                }
-                placeholder="Scene script"
-                className="min-h-[100px] w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              />
-
-              <textarea
-                value={
-                  newScenePrompt
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setNewScenePrompt(
-                    event.target.value,
-                  )
-                }
-                placeholder="Visual prompt"
-                className="min-h-[150px] w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              />
-
+            <div className="mt-5 space-y-4">
               <div>
-                <p className="mb-2 text-sm font-semibold">
-                  Duration
-                </p>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Scene Title
+                </label>
 
-                <div className="flex gap-2">
-                  {[
-                    2,
-                    3,
-                    4,
-                    5,
-                  ].map(
-                    (
-                      duration,
-                    ) => (
-                      <button
-                        key={
-                          duration
-                        }
-                        type="button"
-                        onClick={() =>
-                          setNewSceneDuration(
-                            duration,
-                          )
-                        }
-                        className={[
-                          "rounded-xl border px-4 py-2 text-xs",
-
-                          newSceneDuration ===
-                          duration
-                            ? "border-violet-500 bg-violet-50 text-violet-700"
-                            : "border-slate-200",
-                        ].join(" ")}
-                      >
-                        {
-                          duration
-                        }
-                        s
-                      </button>
-                    ),
-                  )}
-                </div>
+                <input
+                  value={
+                    newSceneTitle
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewSceneTitle(
+                      event.target
+                        .value,
+                    )
+                  }
+                  placeholder="Final product reveal"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
               </div>
 
-              <select
-                value={
-                  newSceneCamera
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setNewSceneCamera(
-                    event.target
-                      .value as CameraMotion,
-                  )
-                }
-                className="w-full rounded-xl border border-slate-200 px-4 py-3"
-              >
-                <option value="zoom-in">
-                  Zoom In
-                </option>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Script
+                </label>
 
-                <option value="zoom-out">
-                  Zoom Out
-                </option>
+                <textarea
+                  value={
+                    newSceneScript
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewSceneScript(
+                      event.target
+                        .value,
+                    )
+                  }
+                  placeholder="Write the dialogue for this scene..."
+                  className="min-h-[100px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </div>
 
-                <option value="pan-left">
-                  Pan Left
-                </option>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Visual Prompt
+                </label>
 
-                <option value="pan-right">
-                  Pan Right
-                </option>
+                <textarea
+                  value={
+                    newScenePrompt
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewScenePrompt(
+                      event.target
+                        .value,
+                    )
+                  }
+                  placeholder="Describe how the scene should look..."
+                  className="min-h-[130px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </div>
 
-                <option value="static">
-                  Static
-                </option>
-              </select>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Duration
+                </label>
 
-              <select
-                value={
-                  newSceneSpeed
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setNewSceneSpeed(
-                    event.target
-                      .value as MotionSpeed,
-                  )
-                }
-                className="w-full rounded-xl border border-slate-200 px-4 py-3"
-              >
-                <option value="slow">
-                  Slow
-                </option>
+                <select
+                  value={
+                    newSceneDuration
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewSceneDuration(
+                      Number(
+                        event.target
+                          .value,
+                      ),
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="2">
+                    2 sec
+                  </option>
 
-                <option value="medium">
-                  Medium
-                </option>
+                  <option value="3">
+                    3 sec
+                  </option>
 
-                <option value="fast">
-                  Fast
-                </option>
-              </select>
+                  <option value="4">
+                    4 sec
+                  </option>
+
+                  <option value="5">
+                    5 sec
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Camera Motion
+                </label>
+
+                <select
+                  value={
+                    newSceneCamera
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewSceneCamera(
+                      event.target
+                        .value as CameraMotion,
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="zoom-in">
+                    Zoom In
+                  </option>
+
+                  <option value="zoom-out">
+                    Zoom Out
+                  </option>
+
+                  <option value="pan-left">
+                    Pan Left
+                  </option>
+
+                  <option value="pan-right">
+                    Pan Right
+                  </option>
+
+                  <option value="static">
+                    Static
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Motion Speed
+                </label>
+
+                <select
+                  value={
+                    newSceneSpeed
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewSceneSpeed(
+                      event.target
+                        .value as MotionSpeed,
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="slow">
+                    Slow
+                  </option>
+
+                  <option value="medium">
+                    Medium
+                  </option>
+
+                  <option value="fast">
+                    Fast
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Transition
+                </label>
+
+                <select
+                  value={
+                    newSceneTransition
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewSceneTransition(
+                      event.target
+                        .value as TransitionType,
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="cut">
+                    Cut
+                  </option>
+
+                  <option value="fade">
+                    Fade
+                  </option>
+
+                  <option value="dissolve">
+                    Dissolve
+                  </option>
+
+                  <option value="slide-left">
+                    Slide Left
+                  </option>
+
+                  <option value="slide-right">
+                    Slide Right
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Transition Duration
+                </label>
+
+                <select
+                  value={
+                    newTransitionDuration
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewTransitionDuration(
+                      Number(
+                        event.target
+                          .value,
+                      ),
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="0.2">
+                    0.2 sec
+                  </option>
+
+                  <option value="0.3">
+                    0.3 sec
+                  </option>
+
+                  <option value="0.4">
+                    0.4 sec
+                  </option>
+
+                  <option value="0.5">
+                    0.5 sec
+                  </option>
+
+                  <option value="0.6">
+                    0.6 sec
+                  </option>
+                </select>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
@@ -1279,7 +1910,7 @@ export default function ScriptPanel({
                     false,
                   )
                 }
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -1289,7 +1920,7 @@ export default function ScriptPanel({
                 onClick={
                   handleAddNewScene
                 }
-                className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
+                className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
               >
                 Add Scene
               </button>
@@ -1298,29 +1929,5 @@ export default function ScriptPanel({
         </div>
       )}
     </>
-  );
-}
-
-function GeneratingStep({
-  label,
-  delay,
-}: {
-  label: string;
-  delay: string;
-}) {
-  return (
-    <div
-      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
-      style={{
-        animationDelay:
-          delay,
-      }}
-    >
-      <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-violet-500" />
-
-      <span className="text-sm text-slate-600">
-        {label}
-      </span>
-    </div>
   );
 }

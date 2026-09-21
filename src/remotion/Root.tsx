@@ -5,6 +5,7 @@ import {
 import FullVideoComposition from "../components/video/FullVideoComposition";
 
 import type {
+  CaptionStyle,
   Scene,
 } from "../app/page";
 
@@ -12,12 +13,14 @@ type FullVideoProps = {
   imageUrl: string;
   scenes: Scene[];
   fps?: number;
+  captionStyle?: CaptionStyle;
 };
 
 const defaultScenes:
   Scene[] = [
   {
-    id: 1,
+    id:
+      1,
 
     title:
       "Creora Preview",
@@ -41,100 +44,108 @@ const defaultScenes:
       speed:
         "slow",
     },
+
+    transition: {
+      type:
+        "cut",
+
+      duration:
+        0.3,
+    },
   },
 ];
 
 export default function RemotionRoot() {
   return (
-    <>
-      <Composition
-        id="CreoraFullVideo"
-        component={
-          FullVideoComposition
-        }
-        width={
-          1080
-        }
-        height={
-          1920
-        }
-        fps={
-          30
-        }
-        durationInFrames={
-          90
-        }
-        defaultProps={{
-          imageUrl:
-            "",
+    <Composition
+      id="CreoraFullVideo"
+      component={
+        FullVideoComposition
+      }
+      width={
+        1080
+      }
+      height={
+        1920
+      }
+      fps={
+        30
+      }
+      durationInFrames={
+        90
+      }
+      defaultProps={{
+        imageUrl:
+          "",
 
-          scenes:
-            defaultScenes,
+        scenes:
+          defaultScenes,
 
-          fps:
-            30,
-        }}
-        calculateMetadata={({
-          props,
-        }) => {
-          const typedProps =
-            props as FullVideoProps;
+        fps:
+          30,
 
-          const fps =
-            typedProps.fps ??
-            30;
+        captionStyle:
+          "dynamic" as CaptionStyle,
+      }}
+      calculateMetadata={({
+        props,
+      }) => {
+        const typedProps =
+          props as FullVideoProps;
 
-          const scenes =
-            typedProps.scenes ??
-            defaultScenes;
+        const fps =
+          typedProps.fps ??
+          30;
 
-          const totalFrames =
-            scenes.reduce(
-              (
-                total,
-                scene,
-              ) => {
-                const seconds =
-                  Math.max(
-                    1,
-                    scene.end -
-                      scene.start,
-                  );
+        const scenes =
+          typedProps.scenes ??
+          defaultScenes;
 
-                const frames =
-                  Math.max(
-                    1,
-                    Math.round(
-                      seconds *
-                        fps,
-                    ),
-                  );
+        const totalFrames =
+          scenes.reduce(
+            (
+              total,
+              scene,
+            ) => {
+              const seconds =
+                Math.max(
+                  1,
 
-                return (
-                  total +
-                  frames
+                  scene.end -
+                    scene.start,
                 );
-              },
-              0,
-            );
 
-          return {
-            durationInFrames:
-              Math.max(
-                1,
-                totalFrames,
-              ),
+              return (
+                total +
+                Math.max(
+                  1,
 
-            fps,
+                  Math.round(
+                    seconds *
+                      fps,
+                  ),
+                )
+              );
+            },
+            0,
+          );
 
-            width:
-              1080,
+        return {
+          durationInFrames:
+            Math.max(
+              1,
+              totalFrames,
+            ),
 
-            height:
-              1920,
-          };
-        }}
-      />
-    </>
+          fps,
+
+          width:
+            1080,
+
+          height:
+            1920,
+        };
+      }}
+    />
   );
 }

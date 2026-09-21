@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  ArrowDown,
+  ArrowUp,
   Download,
   LoaderCircle,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -18,10 +21,15 @@ import ScriptPanel from "@/components/editor/ScriptPanel";
 import VideoPreview from "@/components/editor/VideoPreview";
 import FullVideoPlayer from "@/components/video/FullVideoPlayer";
 
+// =================================
+// TYPES
+// =================================
+
 export type Platform =
   | "tiktok"
   | "instagram"
-  | "youtube";
+  | "youtube"
+  | "other";
 
 export type Duration =
   | 10
@@ -46,9 +54,51 @@ export type MotionSpeed =
   | "medium"
   | "fast";
 
+export type TransitionType =
+  | "cut"
+  | "fade"
+  | "dissolve"
+  | "slide-left"
+  | "slide-right";
+
+export type CaptionStyle =
+  | "dynamic"
+  | "minimal"
+  | "karaoke"
+  | "custom"
+  | "none";
+
+export type VoicePreset =
+  | "natural-female"
+  | "natural-male"
+  | "warm-creator";
+
+export type MusicTrack =
+  | "none"
+  | "chill-vibes"
+  | "upbeat-creator"
+  | "soft-lifestyle";
+
+export type BrandingPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
+
 export type SceneMotion = {
   camera: CameraMotion;
   speed: MotionSpeed;
+};
+
+export type SceneTransition = {
+  type: TransitionType;
+  duration: number;
+};
+
+export type WordTiming = {
+  word: string;
+  start: number;
+  end: number;
 };
 
 export type VideoProject = {
@@ -66,7 +116,18 @@ export type Scene = {
   end: number;
   script: string;
   visualPrompt: string;
+
   motion?: SceneMotion;
+
+  transition?: SceneTransition;
+
+  imageUrl?: string;
+
+  audioUrl?: string;
+
+  audioDuration?: number;
+
+  wordTimings?: WordTiming[];
 };
 
 export type GeneratedContent = {
@@ -77,7 +138,79 @@ export type GeneratedContent = {
   scenes: Scene[];
 };
 
+// =================================
+// TIMELINE
+// =================================
+
+const VOICE_PADDING =
+  0.25;
+
+function roundTime(
+  value: number,
+) {
+  return (
+    Math.round(
+      value * 100,
+    ) / 100
+  );
+}
+
+function rebuildTimeline(
+  scenes: Scene[],
+) {
+  let currentTime =
+    0;
+
+  return scenes.map(
+    (scene) => {
+      const originalDuration =
+        Math.max(
+          1,
+          scene.end -
+            scene.start,
+        );
+
+      const sceneDuration =
+        scene.audioDuration
+          ? Math.max(
+              1,
+              scene.audioDuration +
+                VOICE_PADDING,
+            )
+          : originalDuration;
+
+      const start =
+        roundTime(
+          currentTime,
+        );
+
+      const end =
+        roundTime(
+          start +
+            sceneDuration,
+        );
+
+      currentTime =
+        end;
+
+      return {
+        ...scene,
+        start,
+        end,
+      };
+    },
+  );
+}
+
+// =================================
+// PAGE
+// =================================
+
 export default function Home() {
+  // =================================
+  // IMAGE
+  // =================================
+
   const [
     imagePreview,
     setImagePreview,
@@ -85,6 +218,10 @@ export default function Home() {
     useState<string | null>(
       null,
     );
+
+  // =================================
+  // GENERATED CONTENT
+  // =================================
 
   const [
     generatedContent,
@@ -99,6 +236,128 @@ export default function Home() {
     setContentVersion,
   ] =
     useState(0);
+
+  // =================================
+  // PREVIEW TITLE / SUBTITLE
+  // =================================
+
+  const [
+    previewTitle,
+    setPreviewTitle,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    previewSubtitle,
+    setPreviewSubtitle,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  // =================================
+  // CAPTIONS
+  // =================================
+
+  const [
+    captionStyle,
+    setCaptionStyle,
+  ] =
+    useState<CaptionStyle>(
+      "dynamic",
+    );
+
+  const [
+    captionSyncOffsetMs,
+    setCaptionSyncOffsetMs,
+  ] =
+    useState(0);
+
+  // =================================
+  // VOICEOVER
+  // =================================
+
+  const [
+    voicePreset,
+    setVoicePreset,
+  ] =
+    useState<VoicePreset>(
+      "natural-female",
+    );
+
+  const [
+    isGeneratingVoice,
+    setIsGeneratingVoice,
+  ] =
+    useState(false);
+
+  // =================================
+  // MUSIC
+  // =================================
+
+  const [
+    musicTrack,
+    setMusicTrack,
+  ] =
+    useState<MusicTrack>(
+      "none",
+    );
+
+  const [
+    musicVolume,
+    setMusicVolume,
+  ] =
+    useState(25);
+
+  const [
+    autoDucking,
+    setAutoDucking,
+  ] =
+    useState(true);
+
+  // =================================
+  // BRANDING
+  // =================================
+
+  const [
+    brandingEnabled,
+    setBrandingEnabled,
+  ] =
+    useState(false);
+
+  const [
+    brandLogo,
+    setBrandLogo,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    brandingPosition,
+    setBrandingPosition,
+  ] =
+    useState<BrandingPosition>(
+      "top-right",
+    );
+
+  const [
+    brandingSize,
+    setBrandingSize,
+  ] =
+    useState(16);
+
+  const [
+    brandingOpacity,
+    setBrandingOpacity,
+  ] =
+    useState(85);
+
+  // =================================
+  // PROJECT
+  // =================================
 
   const [
     project,
@@ -120,6 +379,10 @@ export default function Home() {
       style:
         "ugc",
     });
+
+  // =================================
+  // LOADING STATES
+  // =================================
 
   const [
     isGenerating,
@@ -148,7 +411,71 @@ export default function Home() {
     useState(false);
 
   // =================================
-  // GENERATE VIDEO
+  // GENERATE VOICE FOR ONE SCENE
+  // =================================
+
+  const generateVoiceForScene =
+    async (
+      scene: Scene,
+    ): Promise<Scene> => {
+      const response =
+        await fetch(
+          "/api/generate-voice",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                text:
+                  scene.script,
+
+                voice:
+                  voicePreset,
+              }),
+          },
+        );
+
+      if (!response.ok) {
+        const errorData =
+          await response.json();
+
+        throw new Error(
+          errorData.error ||
+            `Could not generate voice for ${scene.title}.`,
+        );
+      }
+
+      const data =
+        await response.json();
+
+      return {
+        ...scene,
+
+        audioUrl:
+          data.audioUrl,
+
+        audioDuration:
+          Number(
+            data.audioDuration,
+          ),
+
+        wordTimings:
+          Array.isArray(
+            data.wordTimings,
+          )
+            ? data.wordTimings
+            : [],
+      };
+    };
+
+  // =================================
+  // GENERATE CONTENT
   // =================================
 
   const handleGenerate =
@@ -192,11 +519,6 @@ export default function Home() {
           const errorData =
             await response.json();
 
-          console.error(
-            "API ERROR:",
-            errorData,
-          );
-
           throw new Error(
             errorData.error ||
               "Failed to generate content.",
@@ -207,13 +529,18 @@ export default function Home() {
           GeneratedContent =
           await response.json();
 
-        console.log(
-          "OLLAMA RESULT:",
+        setGeneratedContent(
           data,
         );
 
-        setGeneratedContent(
-          data,
+        // New generation =
+        // use new AI title/hook.
+        setPreviewTitle(
+          null,
+        );
+
+        setPreviewSubtitle(
+          null,
         );
 
         setContentVersion(
@@ -226,18 +553,12 @@ export default function Home() {
           error,
         );
 
-        if (
+        alert(
           error instanceof
           Error
-        ) {
-          alert(
-            error.message,
-          );
-        } else {
-          alert(
-            "Could not generate the content.",
-          );
-        }
+            ? error.message
+            : "Could not generate the content.",
+        );
       } finally {
         setIsGenerating(
           false,
@@ -246,7 +567,7 @@ export default function Home() {
     };
 
   // =================================
-  // GENERATE / REGENERATE ONE SCENE
+  // REGENERATE ONE SCENE
   // =================================
 
   const handleGenerateScene =
@@ -297,11 +618,6 @@ export default function Home() {
           const errorData =
             await response.json();
 
-          console.error(
-            "SCENE API ERROR:",
-            errorData,
-          );
-
           throw new Error(
             errorData.error ||
               "Failed to regenerate scene.",
@@ -312,10 +628,22 @@ export default function Home() {
           Scene =
           await response.json();
 
-        console.log(
-          "REGENERATED SCENE:",
-          regeneratedScene,
-        );
+        let updatedScene:
+          Scene = {
+          ...regeneratedScene,
+
+          imageUrl:
+            scene.imageUrl,
+        };
+
+        if (
+          scene.audioUrl
+        ) {
+          updatedScene =
+            await generateVoiceForScene(
+              updatedScene,
+            );
+        }
 
         setGeneratedContent(
           (current) => {
@@ -323,18 +651,23 @@ export default function Home() {
               return current;
             }
 
+            const newScenes =
+              current.scenes.map(
+                (
+                  currentScene,
+                ) =>
+                  currentScene.id ===
+                  scene.id
+                    ? updatedScene
+                    : currentScene,
+              );
+
             return {
               ...current,
 
               scenes:
-                current.scenes.map(
-                  (
-                    currentScene,
-                  ) =>
-                    currentScene.id ===
-                    regeneratedScene.id
-                      ? regeneratedScene
-                      : currentScene,
+                rebuildTimeline(
+                  newScenes,
                 ),
             };
           },
@@ -345,18 +678,12 @@ export default function Home() {
           error,
         );
 
-        if (
+        alert(
           error instanceof
           Error
-        ) {
-          alert(
-            error.message,
-          );
-        } else {
-          alert(
-            "Could not regenerate this scene.",
-          );
-        }
+            ? error.message
+            : "Could not regenerate this scene.",
+        );
       } finally {
         setIsGeneratingScene(
           false,
@@ -369,12 +696,99 @@ export default function Home() {
     };
 
   // =================================
+  // GENERATE ALL VOICEOVERS
+  // =================================
+
+  const handleGenerateVoiceovers =
+    async () => {
+      if (
+        !generatedContent ||
+        generatedContent.scenes
+          .length ===
+          0
+      ) {
+        alert(
+          "Generate your video script first.",
+        );
+
+        return;
+      }
+
+      try {
+        setIsGeneratingVoice(
+          true,
+        );
+
+        const updatedScenes:
+          Scene[] = [];
+
+        for (
+          const scene
+          of generatedContent.scenes
+        ) {
+          if (
+            !scene.script.trim()
+          ) {
+            updatedScenes.push(
+              scene,
+            );
+
+            continue;
+          }
+
+          const sceneWithVoice =
+            await generateVoiceForScene(
+              scene,
+            );
+
+          updatedScenes.push(
+            sceneWithVoice,
+          );
+        }
+
+        setGeneratedContent(
+          (current) => {
+            if (!current) {
+              return current;
+            }
+
+            return {
+              ...current,
+
+              scenes:
+                rebuildTimeline(
+                  updatedScenes,
+                ),
+            };
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Voice generation error:",
+          error,
+        );
+
+        alert(
+          error instanceof
+          Error
+            ? error.message
+            : "Could not generate voiceovers.",
+        );
+      } finally {
+        setIsGeneratingVoice(
+          false,
+        );
+      }
+    };
+
+  // =================================
   // UPDATE ONE SCENE
   // =================================
 
   const handleUpdateScene =
     (
       sceneId: number,
+
       updates:
         Partial<Scene>,
     ) => {
@@ -384,19 +798,24 @@ export default function Home() {
             return current;
           }
 
+          const updatedScenes =
+            current.scenes.map(
+              (scene) =>
+                scene.id ===
+                sceneId
+                  ? {
+                      ...scene,
+                      ...updates,
+                    }
+                  : scene,
+            );
+
           return {
             ...current,
 
             scenes:
-              current.scenes.map(
-                (scene) =>
-                  scene.id ===
-                  sceneId
-                    ? {
-                        ...scene,
-                        ...updates,
-                      }
-                    : scene,
+              rebuildTimeline(
+                updatedScenes,
               ),
           };
         },
@@ -412,6 +831,64 @@ export default function Home() {
       updatedScenes:
         Scene[],
     ) => {
+      if (!generatedContent) {
+        return;
+      }
+
+      const oldScenes =
+        generatedContent.scenes;
+
+      const preparedScenes =
+        updatedScenes.map(
+          (scene) => {
+            const previous =
+              oldScenes.find(
+                (item) =>
+                  item.id ===
+                  scene.id,
+              );
+
+            if (!previous) {
+              return scene;
+            }
+
+            const scriptChanged =
+              previous.script.trim() !==
+              scene.script.trim();
+
+            if (
+              scriptChanged &&
+              previous.audioUrl
+            ) {
+              return {
+                ...scene,
+
+                audioUrl:
+                  undefined,
+
+                audioDuration:
+                  undefined,
+
+                wordTimings:
+                  undefined,
+              };
+            }
+
+            return {
+              ...scene,
+
+              audioUrl:
+                previous.audioUrl,
+
+              audioDuration:
+                previous.audioDuration,
+
+              wordTimings:
+                previous.wordTimings,
+            };
+          },
+        );
+
       setGeneratedContent(
         (current) => {
           if (!current) {
@@ -420,11 +897,140 @@ export default function Home() {
 
           return {
             ...current,
+
             scenes:
-              updatedScenes,
+              rebuildTimeline(
+                preparedScenes,
+              ),
           };
         },
       );
+
+      // =================================
+      // REGENERATE VOICE WHEN SCRIPT CHANGES
+      // =================================
+
+      const scenesToRegenerate =
+        updatedScenes.filter(
+          (scene) => {
+            const previous =
+              oldScenes.find(
+                (item) =>
+                  item.id ===
+                  scene.id,
+              );
+
+            if (!previous) {
+              return false;
+            }
+
+            return (
+              Boolean(
+                previous.audioUrl,
+              ) &&
+              previous.script.trim() !==
+                scene.script.trim()
+            );
+          },
+        );
+
+      if (
+        scenesToRegenerate.length ===
+        0
+      ) {
+        return;
+      }
+
+      void (async () => {
+        try {
+          setIsGeneratingVoice(
+            true,
+          );
+
+          const regeneratedVoices =
+            new Map<
+              number,
+              Scene
+            >();
+
+          for (
+            const scene
+            of scenesToRegenerate
+          ) {
+            const withVoice =
+              await generateVoiceForScene(
+                scene,
+              );
+
+            regeneratedVoices.set(
+              scene.id,
+              withVoice,
+            );
+          }
+
+          setGeneratedContent(
+            (current) => {
+              if (!current) {
+                return current;
+              }
+
+              const mergedScenes =
+                current.scenes.map(
+                  (scene) => {
+                    const regenerated =
+                      regeneratedVoices.get(
+                        scene.id,
+                      );
+
+                    if (
+                      !regenerated
+                    ) {
+                      return scene;
+                    }
+
+                    return {
+                      ...scene,
+
+                      audioUrl:
+                        regenerated.audioUrl,
+
+                      audioDuration:
+                        regenerated.audioDuration,
+
+                      wordTimings:
+                        regenerated.wordTimings,
+                    };
+                  },
+                );
+
+              return {
+                ...current,
+
+                scenes:
+                  rebuildTimeline(
+                    mergedScenes,
+                  ),
+              };
+            },
+          );
+        } catch (error) {
+          console.error(
+            "Automatic voice regeneration error:",
+            error,
+          );
+
+          alert(
+            error instanceof
+            Error
+              ? error.message
+              : "Could not update the voiceover.",
+          );
+        } finally {
+          setIsGeneratingVoice(
+            false,
+          );
+        }
+      })();
     };
 
   // =================================
@@ -444,17 +1050,182 @@ export default function Home() {
           return {
             ...current,
 
-            scenes: [
-              ...current.scenes,
-              scene,
-            ],
+            scenes:
+              rebuildTimeline([
+                ...current.scenes,
+                scene,
+              ]),
           };
         },
       );
     };
 
   // =================================
-  // EXPORT MP4
+  // REORDER SCENE
+  // =================================
+
+  const handleMoveScene =
+    (
+      sceneId: number,
+
+      direction:
+        "up" | "down",
+    ) => {
+      setGeneratedContent(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          const currentIndex =
+            current.scenes.findIndex(
+              (scene) =>
+                scene.id ===
+                sceneId,
+            );
+
+          if (
+            currentIndex ===
+            -1
+          ) {
+            return current;
+          }
+
+          const targetIndex =
+            direction ===
+            "up"
+              ? currentIndex -
+                1
+              : currentIndex +
+                1;
+
+          if (
+            targetIndex <
+              0 ||
+            targetIndex >=
+              current.scenes
+                .length
+          ) {
+            return current;
+          }
+
+          const reorderedScenes =
+            [
+              ...current.scenes,
+            ];
+
+          const [
+            movedScene,
+          ] =
+            reorderedScenes.splice(
+              currentIndex,
+              1,
+            );
+
+          reorderedScenes.splice(
+            targetIndex,
+            0,
+            movedScene,
+          );
+
+          return {
+            ...current,
+
+            scenes:
+              rebuildTimeline(
+                reorderedScenes,
+              ),
+          };
+        },
+      );
+
+      /*
+       * ScriptPanel currently has internal
+       * selection state. Remounting keeps it
+       * synchronized with the new order.
+       */
+      setContentVersion(
+        (current) =>
+          current + 1,
+      );
+    };
+
+  // =================================
+  // DELETE SCENE
+  // =================================
+
+  const handleDeleteScene =
+    (
+      sceneId: number,
+    ) => {
+      if (!generatedContent) {
+        return;
+      }
+
+      if (
+        generatedContent.scenes
+          .length <=
+        1
+      ) {
+        alert(
+          "Your video needs at least one scene.",
+        );
+
+        return;
+      }
+
+      const sceneToDelete =
+        generatedContent.scenes.find(
+          (scene) =>
+            scene.id ===
+            sceneId,
+        );
+
+      if (!sceneToDelete) {
+        return;
+      }
+
+      const confirmed =
+        window.confirm(
+          `Delete "${sceneToDelete.title}"?`,
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setGeneratedContent(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          const remainingScenes =
+            current.scenes.filter(
+              (scene) =>
+                scene.id !==
+                sceneId,
+            );
+
+          return {
+            ...current,
+
+            scenes:
+              rebuildTimeline(
+                remainingScenes,
+              ),
+          };
+        },
+      );
+
+      setContentVersion(
+        (current) =>
+          current + 1,
+      );
+    };
+
+  // =================================
+  // EXPORT VIDEO
   // =================================
 
   const handleExportVideo =
@@ -463,7 +1234,8 @@ export default function Home() {
         !imagePreview ||
         !generatedContent ||
         generatedContent.scenes
-          .length === 0
+          .length ===
+          0
       ) {
         alert(
           "Generate a video before exporting.",
@@ -496,6 +1268,26 @@ export default function Home() {
 
                   scenes:
                     generatedContent.scenes,
+
+                  captionStyle,
+
+                  captionSyncOffsetMs,
+
+                  musicTrack,
+
+                  musicVolume,
+
+                  autoDucking,
+
+                  brandingEnabled,
+
+                  brandLogo,
+
+                  brandingPosition,
+
+                  brandingSize,
+
+                  brandingOpacity,
                 }),
             },
           );
@@ -508,14 +1300,11 @@ export default function Home() {
             const errorData =
               await response.json();
 
-            if (
-              errorData.error
-            ) {
-              message =
-                errorData.error;
-            }
+            message =
+              errorData.error ||
+              message;
           } catch {
-            // Response was not JSON
+            //
           }
 
           throw new Error(
@@ -582,18 +1371,12 @@ export default function Home() {
           error,
         );
 
-        if (
+        alert(
           error instanceof
           Error
-        ) {
-          alert(
-            error.message,
-          );
-        } else {
-          alert(
-            "Could not export video.",
-          );
-        }
+            ? error.message
+            : "Could not export video.",
+        );
       } finally {
         setIsExporting(
           false,
@@ -602,25 +1385,42 @@ export default function Home() {
     };
 
   // =================================
-  // TOTAL DURATION
+  // VIDEO INFO
   // =================================
 
   const totalVideoDuration =
     generatedContent
-      ? generatedContent.scenes.reduce(
-          (
-            total,
-            scene,
-          ) =>
-            total +
-            Math.max(
-              1,
-              scene.end -
-                scene.start,
-            ),
-          0,
+      ? roundTime(
+          generatedContent.scenes.reduce(
+            (
+              total,
+              scene,
+            ) =>
+              total +
+              Math.max(
+                1,
+
+                scene.end -
+                  scene.start,
+              ),
+            0,
+          ),
         )
       : 0;
+
+  const hasVoiceover =
+    Boolean(
+      generatedContent?.scenes.some(
+        (scene) =>
+          Boolean(
+            scene.audioUrl,
+          ),
+      ),
+    );
+
+  // =================================
+  // RENDER
+  // =================================
 
   return (
     <div className="flex min-h-screen bg-[#f8f9fc]">
@@ -631,7 +1431,7 @@ export default function Home() {
 
         <main className="mx-auto w-full max-w-[1800px] px-3 py-5 sm:px-4 md:px-5 lg:px-6 xl:px-7">
           {/* =================================
-              PAGE HEADER
+              HEADER
           ================================= */}
 
           <div className="mb-5 flex flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -641,16 +1441,8 @@ export default function Home() {
               </h1>
 
               <p className="mt-1 max-w-2xl text-sm text-slate-500 sm:text-base">
-                Turn a photo and an idea
-                into ready-to-post social
-                content.
+                Turn a photo and an idea into ready-to-post social content.
               </p>
-            </div>
-
-            <div className="hidden shrink-0 rotate-[-5deg] text-lg italic text-slate-700 2xl:block">
-              One idea. Endless content.
-
-              <div className="ml-auto mt-1 h-[3px] w-20 rounded-full bg-violet-500" />
             </div>
           </div>
 
@@ -666,20 +1458,14 @@ export default function Home() {
 
           {/* =================================
               MAIN EDITOR
+
+              IMPORTANT:
+              KEEP THIS SMALL UI.
+              DO NOT CHANGE.
           ================================= */}
 
-          <div
-            className="
-              mt-4
-              grid
-              min-w-0
-              grid-cols-1
-              gap-4
-              xl:grid-cols-2
-              2xl:grid-cols-[minmax(320px,1.05fr)_minmax(300px,0.82fr)_minmax(420px,1fr)]
-            "
-          >
-            {/* CREATOR INPUT */}
+          <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-[minmax(320px,1.05fr)_minmax(300px,0.82fr)_minmax(420px,1fr)]">
+            {/* CREATOR */}
 
             <div className="min-w-0">
               <CreatorInputPanel
@@ -711,12 +1497,60 @@ export default function Home() {
                 imagePreview={
                   imagePreview
                 }
+                project={
+                  project
+                }
+                generatedContent={
+                  generatedContent
+                }
+                captionStyle={
+                  captionStyle
+                }
+                captionSyncOffsetMs={
+                  captionSyncOffsetMs
+                }
+                musicTrack={
+                  musicTrack
+                }
+                musicVolume={
+                  musicVolume
+                }
+                autoDucking={
+                  autoDucking
+                }
+                brandingEnabled={
+                  brandingEnabled
+                }
+                brandLogo={
+                  brandLogo
+                }
+                brandingPosition={
+                  brandingPosition
+                }
+                brandingSize={
+                  brandingSize
+                }
+                brandingOpacity={
+                  brandingOpacity
+                }
+                previewTitle={
+                  previewTitle
+                }
+                setPreviewTitle={
+                  setPreviewTitle
+                }
+                previewSubtitle={
+                  previewSubtitle
+                }
+                setPreviewSubtitle={
+                  setPreviewSubtitle
+                }
               />
             </div>
 
-            {/* SCRIPT PANEL */}
+            {/* SCRIPT */}
 
-            <div className="min-w-0 xl:col-span-2 2xl:col-span-1">
+            <div className="min-w-0 sm:col-span-2 2xl:col-span-3">
               <ScriptPanel
                 key={
                   contentVersion
@@ -756,14 +1590,15 @@ export default function Home() {
           </div>
 
           {/* =================================
-              FULL VIDEO PREVIEW
+              FULL VIDEO
           ================================= */}
 
           {imagePreview &&
             generatedContent &&
             generatedContent.scenes
-              .length > 0 && (
-              <section className="mt-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_18px_rgba(20,20,43,0.03)] sm:p-5 lg:mt-6">
+              .length >
+              0 && (
+              <section className="mt-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 lg:mt-6">
                 {/* HEADER */}
 
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -779,9 +1614,14 @@ export default function Home() {
                     </h2>
 
                     <p className="mt-1 text-sm text-slate-500">
-                      Watch all scenes
-                      together in sequence.
+                      Watch all scenes together in sequence.
                     </p>
+
+                    {hasVoiceover && (
+                      <p className="mt-2 text-xs font-medium text-emerald-600">
+                        Voiceover timing enabled
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
@@ -806,6 +1646,27 @@ export default function Home() {
                       }
                     </span>
 
+                    {captionStyle ===
+                      "none" && (
+                      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+                        No Captions
+                      </span>
+                    )}
+
+                    {musicTrack !==
+                      "none" && (
+                      <span className="rounded-full bg-fuchsia-50 px-3 py-1.5 text-xs font-medium text-fuchsia-700">
+                        Music
+                      </span>
+                    )}
+
+                    {brandingEnabled &&
+                      brandLogo && (
+                        <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-medium text-cyan-700">
+                          Branding
+                        </span>
+                      )}
+
                     <button
                       type="button"
                       onClick={
@@ -815,59 +1676,40 @@ export default function Home() {
                         isExporting
                       }
                       className={[
-                        "flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition",
+                        "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition",
 
                         isExporting
                           ? "cursor-not-allowed bg-violet-400"
-                          : "bg-violet-600 hover:bg-violet-700 active:scale-[0.98]",
-                      ].join(" ")}
+                          : "bg-violet-600 hover:bg-violet-700",
+                      ].join(
+                        " ",
+                      )}
                     >
                       {isExporting ? (
                         <>
                           <LoaderCircle
-                            size={
-                              17
-                            }
+                            size={17}
                             className="animate-spin"
                           />
 
-                          <span className="whitespace-nowrap">
-                            Rendering MP4...
-                          </span>
+                          Rendering MP4...
                         </>
                       ) : (
                         <>
                           <Download
-                            size={
-                              17
-                            }
+                            size={17}
                           />
 
-                          <span className="whitespace-nowrap">
-                            Export MP4
-                          </span>
+                          Export MP4
                         </>
                       )}
                     </button>
                   </div>
                 </div>
 
-                {/* =================================
-                    PLAYER + TIMELINE
-                ================================= */}
+                {/* BODY */}
 
-                <div
-                  className="
-                    mt-5
-                    grid
-                    min-w-0
-                    grid-cols-1
-                    gap-5
-                    xl:mt-6
-                    xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]
-                    xl:gap-6
-                  "
-                >
+                <div className="mt-5 grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
                   {/* PLAYER */}
 
                   <div className="mx-auto w-full max-w-[360px] xl:mx-0">
@@ -878,18 +1720,54 @@ export default function Home() {
                       scenes={
                         generatedContent.scenes
                       }
+                      captionStyle={
+                        captionStyle
+                      }
+                      captionSyncOffsetMs={
+                        captionSyncOffsetMs
+                      }
+                      musicTrack={
+                        musicTrack
+                      }
+                      musicVolume={
+                        musicVolume
+                      }
+                      autoDucking={
+                        autoDucking
+                      }
+                      brandingEnabled={
+                        brandingEnabled
+                      }
+                      brandLogo={
+                        brandLogo
+                      }
+                      brandingPosition={
+                        brandingPosition
+                      }
+                      brandingSize={
+                        brandingSize
+                      }
+                      brandingOpacity={
+                        brandingOpacity
+                      }
                     />
                   </div>
 
-                  {/* RIGHT SIDE */}
+                  {/* TIMELINE */}
 
                   <div className="min-w-0">
-                    {/* TIMELINE */}
+                    <div className="rounded-xl border border-slate-200 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Video Timeline
+                          </p>
 
-                    <div className="rounded-xl border border-slate-200 p-3 sm:p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        Video Timeline
-                      </p>
+                          <p className="mt-1 text-[10px] text-slate-400">
+                            Reorder or remove scenes
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="mt-4 space-y-3">
                         {generatedContent.scenes.map(
@@ -901,8 +1779,10 @@ export default function Home() {
                               key={
                                 scene.id
                               }
-                              className="flex min-w-0 gap-3 rounded-xl bg-slate-50 p-3"
+                              className="group flex gap-3 rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100/80"
                             >
+                              {/* NUMBER */}
+
                               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">
                                 {
                                   index +
@@ -910,51 +1790,163 @@ export default function Home() {
                                 }
                               </div>
 
-                              <div className="min-w-0 flex-1">
-                                <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                                  <p className="min-w-0 truncate text-sm font-semibold text-slate-800">
-                                    {
-                                      scene.title
-                                    }
-                                  </p>
+                              {/* CONTENT */}
 
-                                  <span className="shrink-0 text-[10px] text-slate-400">
-                                    {
-                                      scene.start
-                                    }
-                                    s–
-                                    {
-                                      scene.end
-                                    }
-                                    s
-                                  </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-slate-800">
+                                      {
+                                        scene.title
+                                      }
+                                    </p>
+
+                                    <span className="mt-1 block text-[10px] text-slate-400">
+                                      {
+                                        scene.start
+                                      }
+                                      s–
+                                      {
+                                        scene.end
+                                      }
+                                      s
+                                    </span>
+                                  </div>
+
+                                  {/* =================================
+                                      REORDER + DELETE
+                                  ================================= */}
+
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    {/* MOVE UP */}
+
+                                    <button
+                                      type="button"
+                                      title="Move scene up"
+                                      disabled={
+                                        index ===
+                                        0
+                                      }
+                                      onClick={() =>
+                                        handleMoveScene(
+                                          scene.id,
+                                          "up",
+                                        )
+                                      }
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
+                                    >
+                                      <ArrowUp
+                                        size={
+                                          13
+                                        }
+                                      />
+                                    </button>
+
+                                    {/* MOVE DOWN */}
+
+                                    <button
+                                      type="button"
+                                      title="Move scene down"
+                                      disabled={
+                                        index ===
+                                        generatedContent
+                                          .scenes
+                                          .length -
+                                          1
+                                      }
+                                      onClick={() =>
+                                        handleMoveScene(
+                                          scene.id,
+                                          "down",
+                                        )
+                                      }
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
+                                    >
+                                      <ArrowDown
+                                        size={
+                                          13
+                                        }
+                                      />
+                                    </button>
+
+                                    {/* DELETE */}
+
+                                    <button
+                                      type="button"
+                                      title="Delete scene"
+                                      onClick={() =>
+                                        handleDeleteScene(
+                                          scene.id,
+                                        )
+                                      }
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-rose-100 bg-white text-rose-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                                    >
+                                      <Trash2
+                                        size={
+                                          13
+                                        }
+                                      />
+                                    </button>
+                                  </div>
                                 </div>
 
-                                <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-500 sm:line-clamp-2">
+                                {/* SCRIPT */}
+
+                                <p className="mt-1 text-xs leading-5 text-slate-500">
                                   {
                                     scene.script
                                   }
                                 </p>
 
-                                {scene.motion && (
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    <span className="rounded-full bg-white px-2 py-1 text-[10px] font-medium text-violet-700">
-                                      {
-                                        scene
-                                          .motion
-                                          .camera
-                                      }
-                                    </span>
+                                {/* BADGES */}
 
-                                    <span className="rounded-full bg-white px-2 py-1 text-[10px] text-slate-500">
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {scene.motion && (
+                                    <>
+                                      <span className="rounded-full bg-white px-2 py-1 text-[10px] font-medium text-violet-700">
+                                        {
+                                          scene
+                                            .motion
+                                            .camera
+                                        }
+                                      </span>
+
+                                      <span className="rounded-full bg-white px-2 py-1 text-[10px] text-slate-500">
+                                        {
+                                          scene
+                                            .motion
+                                            .speed
+                                        }
+                                      </span>
+                                    </>
+                                  )}
+
+                                  {scene.transition && (
+                                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-700">
                                       {
                                         scene
-                                          .motion
-                                          .speed
+                                          .transition
+                                          .type
                                       }
                                     </span>
-                                  </div>
-                                )}
+                                  )}
+
+                                  {scene.audioUrl && (
+                                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700">
+                                      Voice
+                                    </span>
+                                  )}
+
+                                  {scene.wordTimings &&
+                                    scene
+                                      .wordTimings
+                                      .length >
+                                      0 && (
+                                      <span className="rounded-full bg-cyan-50 px-2 py-1 text-[10px] font-medium text-cyan-700">
+                                        Word Sync
+                                      </span>
+                                    )}
+                                </div>
                               </div>
                             </div>
                           ),
@@ -962,14 +1954,16 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* CAPTION */}
+                    {/* =================================
+                        SOCIAL CAPTION
+                    ================================= */}
 
-                    <div className="mt-4 rounded-xl bg-violet-50 p-3 sm:p-4">
+                    <div className="mt-4 rounded-xl bg-violet-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
                         Caption
                       </p>
 
-                      <p className="mt-2 break-words text-sm leading-6 text-slate-700">
+                      <p className="mt-2 text-sm leading-6 text-slate-700">
                         {
                           generatedContent.caption
                         }
@@ -983,7 +1977,7 @@ export default function Home() {
                           ) => (
                             <span
                               key={`${hashtag}-${index}`}
-                              className="max-w-full break-all rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-violet-700"
+                              className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-violet-700"
                             >
                               {
                                 hashtag
@@ -991,36 +1985,6 @@ export default function Home() {
                             </span>
                           ),
                         )}
-                      </div>
-                    </div>
-
-                    {/* EXPORT INFO */}
-
-                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                          <Download
-                            size={
-                              17
-                            }
-                          />
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800">
-                            Ready for export
-                          </p>
-
-                          <p className="mt-1 text-xs leading-5 text-slate-500">
-                            Your video will
-                            be rendered as a
-                            vertical 1080 ×
-                            1920 MP4 using
-                            the scenes and
-                            edits shown in
-                            this preview.
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1033,7 +1997,86 @@ export default function Home() {
           ================================= */}
 
           <div className="mt-4 min-w-0">
-            <EditorControls />
+            <EditorControls
+              captionStyle={
+                captionStyle
+              }
+              setCaptionStyle={
+                setCaptionStyle
+              }
+              captionSyncOffsetMs={
+                captionSyncOffsetMs
+              }
+              setCaptionSyncOffsetMs={
+                setCaptionSyncOffsetMs
+              }
+              voicePreset={
+                voicePreset
+              }
+              setVoicePreset={
+                setVoicePreset
+              }
+              onGenerateVoiceovers={
+                handleGenerateVoiceovers
+              }
+              isGeneratingVoice={
+                isGeneratingVoice
+              }
+              hasGeneratedContent={
+                Boolean(
+                  generatedContent?.scenes
+                    .length,
+                )
+              }
+              musicTrack={
+                musicTrack
+              }
+              setMusicTrack={
+                setMusicTrack
+              }
+              musicVolume={
+                musicVolume
+              }
+              setMusicVolume={
+                setMusicVolume
+              }
+              autoDucking={
+                autoDucking
+              }
+              setAutoDucking={
+                setAutoDucking
+              }
+              brandingEnabled={
+                brandingEnabled
+              }
+              setBrandingEnabled={
+                setBrandingEnabled
+              }
+              brandLogo={
+                brandLogo
+              }
+              setBrandLogo={
+                setBrandLogo
+              }
+              brandingPosition={
+                brandingPosition
+              }
+              setBrandingPosition={
+                setBrandingPosition
+              }
+              brandingSize={
+                brandingSize
+              }
+              setBrandingSize={
+                setBrandingSize
+              }
+              brandingOpacity={
+                brandingOpacity
+              }
+              setBrandingOpacity={
+                setBrandingOpacity
+              }
+            />
           </div>
         </main>
       </div>

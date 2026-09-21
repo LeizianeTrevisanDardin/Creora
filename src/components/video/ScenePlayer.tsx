@@ -5,6 +5,7 @@ import {
 } from "@remotion/player";
 
 import type {
+  CaptionStyle,
   SceneMotion,
 } from "@/app/page";
 
@@ -12,14 +13,11 @@ import SceneComposition from "./SceneComposition";
 
 type ScenePlayerProps = {
   imageUrl: string;
-
   title: string;
-
   script: string;
-
   durationSeconds: number;
-
   motion?: SceneMotion;
+  captionStyle?: CaptionStyle;
 };
 
 export default function ScenePlayer({
@@ -28,50 +26,52 @@ export default function ScenePlayer({
   script,
   durationSeconds,
   motion,
+  captionStyle = "dynamic",
 }: ScenePlayerProps) {
-  const fps = 30;
+  const fps =
+    30;
 
-  const safeDuration =
+  const durationInFrames =
     Math.max(
       1,
-      durationSeconds,
+      Math.round(
+        durationSeconds *
+          fps,
+      ),
     );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
-      <Player
-        component={
-          SceneComposition
-        }
-        inputProps={{
-          imageUrl,
-          title,
-          script,
-          motion,
-        }}
-        durationInFrames={
-          Math.round(
-            safeDuration * fps,
-          )
-        }
-        compositionWidth={
-          1080
-        }
-        compositionHeight={
-          1920
-        }
-        fps={
-          fps
-        }
-        controls
-        style={{
-          width:
-            "100%",
+    <Player
+      component={
+        SceneComposition
+      }
+      inputProps={{
+        imageUrl,
+        title,
+        script,
+        motion,
+        captionStyle,
+      }}
+      durationInFrames={
+        durationInFrames
+      }
+      compositionWidth={
+        1080
+      }
+      compositionHeight={
+        1920
+      }
+      fps={
+        fps
+      }
+      controls
+      style={{
+        width:
+          "100%",
 
-          aspectRatio:
-            "9 / 16",
-        }}
-      />
-    </div>
+        aspectRatio:
+          "9 / 16",
+      }}
+    />
   );
 }

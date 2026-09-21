@@ -58,7 +58,8 @@ export default function CreatorInputPanel({
 
     reader.onload = () => {
       if (
-        typeof reader.result === "string"
+        typeof reader.result ===
+        "string"
       ) {
         setImagePreview(
           reader.result,
@@ -66,7 +67,9 @@ export default function CreatorInputPanel({
       }
     };
 
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(
+      file,
+    );
   };
 
   return (
@@ -80,7 +83,9 @@ export default function CreatorInputPanel({
           <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gradient-to-br from-amber-100 via-rose-100 to-violet-100">
             {imagePreview ? (
               <Image
-                src={imagePreview}
+                src={
+                  imagePreview
+                }
                 alt="Creator preview"
                 fill
                 className="object-cover"
@@ -138,18 +143,25 @@ export default function CreatorInputPanel({
               project.creatorDescription
             }
             onChange={(event) =>
-              setProject((current) => ({
-                ...current,
-                creatorDescription:
-                  event.target.value,
-              }))
+              setProject(
+                (current) => ({
+                  ...current,
+
+                  creatorDescription:
+                    event.target.value,
+                }),
+              )
             }
             maxLength={500}
             className="min-h-[100px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 pb-7 text-sm leading-6 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
           />
 
           <span className="absolute bottom-3 right-3 text-[11px] text-slate-400">
-            {project.creatorDescription.length}
+            {
+              project
+                .creatorDescription
+                .length
+            }
             /500
           </span>
         </div>
@@ -166,18 +178,25 @@ export default function CreatorInputPanel({
               project.videoPrompt
             }
             onChange={(event) =>
-              setProject((current) => ({
-                ...current,
-                videoPrompt:
-                  event.target.value,
-              }))
+              setProject(
+                (current) => ({
+                  ...current,
+
+                  videoPrompt:
+                    event.target.value,
+                }),
+              )
             }
             maxLength={500}
             className="min-h-[88px] w-full resize-none rounded-xl border border-slate-200 px-4 py-3 pb-7 text-sm leading-6 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
           />
 
           <span className="absolute bottom-3 right-3 text-[11px] text-slate-400">
-            {project.videoPrompt.length}
+            {
+              project
+                .videoPrompt
+                .length
+            }
             /500
           </span>
         </div>
@@ -192,14 +211,20 @@ export default function CreatorInputPanel({
           <button
             type="button"
             onClick={() =>
-              setProject((current) => ({
-                ...current,
-                platform: "tiktok",
-              }))
+              setProject(
+                (current) => ({
+                  ...current,
+
+                  platform:
+                    "tiktok",
+                }),
+              )
             }
             className={[
               "flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-medium transition",
-              project.platform === "tiktok"
+
+              project.platform ===
+              "tiktok"
                 ? "border-violet-500 bg-violet-50 text-violet-700"
                 : "border-slate-200 hover:bg-slate-50",
             ].join(" ")}
@@ -214,20 +239,27 @@ export default function CreatorInputPanel({
           <button
             type="button"
             onClick={() =>
-              setProject((current) => ({
-                ...current,
-                platform: "instagram",
-              }))
+              setProject(
+                (current) => ({
+                  ...current,
+
+                  platform:
+                    "instagram",
+                }),
+              )
             }
             className={[
               "flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-medium transition",
+
               project.platform ===
               "instagram"
                 ? "border-violet-500 bg-violet-50 text-violet-700"
                 : "border-slate-200 hover:bg-slate-50",
             ].join(" ")}
           >
-            <Camera size={16} />
+            <Camera
+              size={16}
+            />
 
             Instagram
           </button>
@@ -235,26 +267,51 @@ export default function CreatorInputPanel({
           <button
             type="button"
             onClick={() =>
-              setProject((current) => ({
-                ...current,
-                platform: "youtube",
-              }))
+              setProject(
+                (current) => ({
+                  ...current,
+
+                  platform:
+                    "youtube",
+                }),
+              )
             }
             className={[
               "flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-medium transition",
-              project.platform === "youtube"
+
+              project.platform ===
+              "youtube"
                 ? "border-violet-500 bg-violet-50 text-violet-700"
                 : "border-slate-200 hover:bg-slate-50",
             ].join(" ")}
           >
-            <Play size={16} />
+            <Play
+              size={16}
+            />
 
             YouTube
           </button>
 
           <button
             type="button"
-            className="rounded-xl border border-slate-200 px-3 py-3 text-xs font-medium hover:bg-slate-50"
+            onClick={() =>
+              setProject(
+                (current) => ({
+                  ...current,
+
+                  platform:
+                    "other",
+                }),
+              )
+            }
+            className={[
+              "rounded-xl border px-3 py-3 text-xs font-medium transition",
+
+              project.platform ===
+              "other"
+                ? "border-violet-500 bg-violet-50 text-violet-700"
+                : "border-slate-200 hover:bg-slate-50",
+            ].join(" ")}
           >
             ••• Other
           </button>
@@ -268,7 +325,11 @@ export default function CreatorInputPanel({
           </p>
 
           <div className="flex gap-2">
-            {[10, 15, 30].map(
+            {[
+              10,
+              15,
+              30,
+            ].map(
               (item) => (
                 <button
                   type="button"
@@ -277,14 +338,20 @@ export default function CreatorInputPanel({
                     setProject(
                       (current) => ({
                         ...current,
+
                         duration:
-                          item as 10 | 15 | 30,
+                          item as
+                            | 10
+                            | 15
+                            | 30,
                       }),
                     )
                   }
                   className={[
                     "rounded-xl border px-4 py-2.5 text-xs font-medium",
-                    project.duration === item
+
+                    project.duration ===
+                    item
                       ? "border-violet-500 bg-violet-50 text-violet-700"
                       : "border-slate-200",
                   ].join(" ")}
@@ -304,79 +371,108 @@ export default function CreatorInputPanel({
           <div className="flex flex-wrap gap-2">
             {[
               {
-                value: "ugc",
-                label: "UGC",
+                value:
+                  "ugc",
+
+                label:
+                  "UGC",
               },
               {
-                value: "cinematic",
-                label: "Cinematic",
+                value:
+                  "cinematic",
+
+                label:
+                  "Cinematic",
               },
               {
-                value: "lifestyle",
-                label: "Lifestyle",
+                value:
+                  "lifestyle",
+
+                label:
+                  "Lifestyle",
               },
               {
-                value: "product-demo",
-                label: "Product Demo",
+                value:
+                  "product-demo",
+
+                label:
+                  "Product Demo",
               },
-            ].map((item) => (
-              <button
-                type="button"
-                key={item.value}
-                onClick={() =>
-                  setProject(
-                    (current) => ({
-                      ...current,
-                      style:
-                        item.value as VideoProject["style"],
-                    }),
-                  )
-                }
-                className={[
-                  "rounded-xl border px-3 py-2.5 text-xs font-medium",
-                  project.style ===
-                  item.value
-                    ? "border-violet-500 bg-violet-50 text-violet-700"
-                    : "border-slate-200",
-                ].join(" ")}
-              >
-                {item.label}
-              </button>
-            ))}
+            ].map(
+              (item) => (
+                <button
+                  type="button"
+                  key={
+                    item.value
+                  }
+                  onClick={() =>
+                    setProject(
+                      (current) => ({
+                        ...current,
+
+                        style:
+                          item.value as VideoProject["style"],
+                      }),
+                    )
+                  }
+                  className={[
+                    "rounded-xl border px-3 py-2.5 text-xs font-medium",
+
+                    project.style ===
+                    item.value
+                      ? "border-violet-500 bg-violet-50 text-violet-700"
+                      : "border-slate-200",
+                  ].join(" ")}
+                >
+                  {
+                    item.label
+                  }
+                </button>
+              ),
+            )}
           </div>
         </div>
       </div>
 
       <button
         type="button"
-        onClick={onGenerate}
-        disabled={isGenerating}
+        onClick={
+          onGenerate
+        }
+        disabled={
+          isGenerating
+        }
         className={[
-            "mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl",
-            "bg-gradient-to-r from-violet-600 to-purple-600",
-            "text-sm font-semibold text-white",
-            "shadow-lg shadow-violet-200 transition",
-            isGenerating
+          "mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl",
+          "bg-gradient-to-r from-violet-600 to-purple-600",
+          "text-sm font-semibold text-white",
+          "shadow-lg shadow-violet-200 transition",
+
+          isGenerating
             ? "cursor-not-allowed opacity-70"
             : "hover:opacity-95",
         ].join(" ")}
-        >
+      >
         {isGenerating ? (
-            <>
+          <>
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
 
             Generating...
-            </>
+          </>
         ) : (
-            <>
-            <Sparkles size={17} />
+          <>
+            <Sparkles
+              size={17}
+            />
 
             Generate Video
 
-            <span>→</span>
-            </>
+            <span>
+              →
+            </span>
+          </>
         )}
-        </button>
+      </button>
     </section>
   );
 }

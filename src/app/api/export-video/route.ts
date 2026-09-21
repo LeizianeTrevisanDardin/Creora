@@ -8,25 +8,22 @@ import {
 } from "@remotion/renderer";
 
 import {
-  NextResponse,
-} from "next/server";
-
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-} from "node:fs";
-
-import {
-  tmpdir,
-} from "node:os";
+  readFile,
+  unlink,
+} from "fs/promises";
 
 import {
   join,
-} from "node:path";
+} from "path";
+
+import {
+  NextResponse,
+} from "next/server";
 
 import type {
+  BrandingPosition,
+  CaptionStyle,
+  MusicTrack,
   Scene,
 } from "@/app/page";
 
@@ -39,32 +36,72 @@ export const dynamic =
 type ExportRequest = {
   imageUrl: string;
   scenes: Scene[];
+
+  captionStyle?: CaptionStyle;
+  captionSyncOffsetMs?: number;
+
+  musicTrack?: MusicTrack;
+  musicVolume?: number;
+  autoDucking?: boolean;
+
+  brandingEnabled?: boolean;
+  brandLogo?: string | null;
+  brandingPosition?: BrandingPosition;
+  brandingSize?: number;
+  brandingOpacity?: number;
 };
 
 export async function POST(
   request: Request,
 ) {
   let outputLocation:
-    string | null = null;
+    string | null =
+    null;
 
   try {
-    // =================================
-    // READ REQUEST
-    // =================================
-
     const body =
       (await request.json()) as ExportRequest;
 
     const {
       imageUrl,
       scenes,
+
+      captionStyle =
+        "dynamic",
+
+      captionSyncOffsetMs =
+        0,
+
+      musicTrack =
+        "none",
+
+      musicVolume =
+        25,
+
+      autoDucking =
+        true,
+
+      brandingEnabled =
+        false,
+
+      brandLogo =
+        null,
+
+      brandingPosition =
+        "top-right",
+
+      brandingSize =
+        16,
+
+      brandingOpacity =
+        85,
     } = body;
 
     if (!imageUrl) {
       return NextResponse.json(
         {
           error:
-            "An image is required before exporting.",
+            "Image is required.",
         },
         {
           status: 400,
@@ -76,12 +113,13 @@ export async function POST(
       !Array.isArray(
         scenes,
       ) ||
-      scenes.length === 0
+      scenes.length ===
+        0
     ) {
       return NextResponse.json(
         {
           error:
-            "At least one scene is required before exporting.",
+            "At least one scene is required.",
         },
         {
           status: 400,
@@ -89,19 +127,24 @@ export async function POST(
       );
     }
 
-    // =================================
-    // INPUT PROPS
-    // =================================
-
     const inputProps = {
       imageUrl,
       scenes,
       fps: 30,
-    };
 
-    // =================================
-    // REMOTION ENTRY
-    // =================================
+      captionStyle,
+      captionSyncOffsetMs,
+
+      musicTrack,
+      musicVolume,
+      autoDucking,
+
+      brandingEnabled,
+      brandLogo,
+      brandingPosition,
+      brandingSize,
+      brandingOpacity,
+    };
 
     const entryPoint =
       join(
@@ -111,35 +154,10 @@ export async function POST(
         "index.ts",
       );
 
-    // =================================
-    // BUNDLE REMOTION
-    // =================================
-
-    console.log(
-      "Bundling Remotion...",
-    );
-
     const serveUrl =
       await bundle({
         entryPoint,
-
-        onProgress:
-          (progress) => {
-            console.log(
-              `Bundle: ${Math.round(
-                progress * 100,
-              )}%`,
-            );
-          },
       });
-
-    // =================================
-    // SELECT COMPOSITION
-    // =================================
-
-    console.log(
-      "Selecting composition...",
-    );
 
     const composition =
       await selectComposition({
@@ -151,45 +169,14 @@ export async function POST(
         inputProps,
       });
 
-    // =================================
-    // CREATE TEMP OUTPUT
-    // =================================
-
-    const exportFolder =
-      join(
-        tmpdir(),
-        "creora-exports",
-      );
-
-    if (
-      !existsSync(
-        exportFolder,
-      )
-    ) {
-      mkdirSync(
-        exportFolder,
-        {
-          recursive: true,
-        },
-      );
-    }
-
     const fileName =
       `creora-${Date.now()}.mp4`;
 
     outputLocation =
       join(
-        exportFolder,
+        "/tmp",
         fileName,
       );
-
-    // =================================
-    // RENDER MP4
-    // =================================
-
-    console.log(
-      "Rendering MP4...",
-    );
 
     await renderMedia({
       composition,
@@ -202,45 +189,12 @@ export async function POST(
       outputLocation,
 
       inputProps,
-
-      onProgress:
-        ({
-          progress,
-        }) => {
-          console.log(
-            `Render: ${Math.round(
-              progress * 100,
-            )}%`,
-          );
-        },
     });
 
-    // =================================
-    // READ VIDEO
-    // =================================
-
     const videoBuffer =
-      readFileSync(
+      await readFile(
         outputLocation,
       );
-
-    // =================================
-    // DELETE TEMP FILE
-    // =================================
-
-    rmSync(
-      outputLocation,
-      {
-        force: true,
-      },
-    );
-
-    outputLocation =
-      null;
-
-    // =================================
-    // RETURN MP4
-    // =================================
 
     return new Response(
       videoBuffer,
@@ -258,35 +212,22 @@ export async function POST(
             String(
               videoBuffer.length,
             ),
+
+          "Cache-Control":
+            "no-store",
         },
       },
     );
   } catch (error) {
     console.error(
-      "EXPORT VIDEO ERROR:",
+      "Video export error:",
       error,
     );
-
-    if (
-      outputLocation
-    ) {
-      try {
-        rmSync(
-          outputLocation,
-          {
-            force: true,
-          },
-        );
-      } catch {
-        // Ignore cleanup error
-      }
-    }
 
     return NextResponse.json(
       {
         error:
-          error instanceof
-          Error
+          error instanceof Error
             ? error.message
             : "Could not export video.",
       },
@@ -294,5 +235,17 @@ export async function POST(
         status: 500,
       },
     );
+  } finally {
+    if (
+      outputLocation
+    ) {
+      try {
+        await unlink(
+          outputLocation,
+        );
+      } catch {
+        //
+      }
+    }
   }
 }

@@ -2,18 +2,23 @@ import {
   NextResponse,
 } from "next/server";
 
+export const runtime =
+  "nodejs";
+
 export async function POST(
   request: Request,
 ) {
   try {
+    const body =
+      await request.json();
+
     const {
       creatorDescription,
       videoPrompt,
       platform,
       style,
       scene,
-    } =
-      await request.json();
+    } = body;
 
     if (!scene) {
       return NextResponse.json(
@@ -28,166 +33,140 @@ export async function POST(
     }
 
     const prompt = `
-You are the creative director for Creora,
-an AI social media content studio.
+You are an expert short-form social media video director.
 
-Regenerate ONLY the selected scene below.
+Regenerate ONLY the following scene.
 
-Do not regenerate the full video.
-
-CREATOR:
+Creator:
 ${creatorDescription}
 
-ORIGINAL VIDEO IDEA:
+Overall video idea:
 ${videoPrompt}
 
-PLATFORM:
+Platform:
 ${platform}
 
-STYLE:
+Style:
 ${style}
 
-CURRENT SCENE:
+Current scene:
 
-Title:
-${scene.title}
-
-Start:
-${scene.start}
-
-End:
-${scene.end}
-
-Current script:
-${scene.script}
-
-Current visual prompt:
-${scene.visualPrompt}
-
-Current camera motion:
-${scene.motion?.camera ?? "zoom-in"}
-
-Current motion speed:
-${scene.motion?.speed ?? "slow"}
-
-Create a better version of this scene.
-
-Requirements:
-
-- Keep the same scene id.
-- Keep the same start time.
-- Keep the same end time.
-- Keep the spoken script short enough
-  to fit the scene duration.
-- Make the scene feel natural
-  for the creator.
-- Keep it suitable for ${platform}.
-- Match the requested ${style} style.
-
-Create a detailed visualPrompt.
-
-The visualPrompt should describe:
-- creator action
-- environment
-- camera angle
-- camera movement
-- lighting
-- facial expression
-- visual style
-
-Choose a camera motion.
-
-motion.camera MUST be exactly one of:
-- zoom-in
-- zoom-out
-- pan-left
-- pan-right
-- static
-
-motion.speed MUST be exactly one of:
-- slow
-- medium
-- fast
-
-Motion guidance:
-
-- Cinematic and luxury scenes usually
-  work best with slow movement.
-
-- Hooks may use zoom-in.
-
-- Product close-ups may use
-  zoom-in or pan movement.
-
-- Reveal moments may use zoom-out.
-
-- Avoid static unless it genuinely
-  fits the scene.
+${JSON.stringify(
+  scene,
+  null,
+  2,
+)}
 
 Return ONLY valid JSON.
 
-Return exactly this structure:
+Use exactly this structure:
 
 {
   "id": ${scene.id},
-  "title": "string",
+  "title": "Improved scene title",
   "start": ${scene.start},
   "end": ${scene.end},
-  "script": "spoken words",
-  "visualPrompt": "detailed visual generation prompt",
+  "script": "Improved short dialogue",
+  "visualPrompt": "Detailed visual description",
   "motion": {
     "camera": "zoom-in",
     "speed": "slow"
+  },
+  "transition": {
+    "type": "fade",
+    "duration": 0.4
   }
 }
+
+IMPORTANT:
+
+Keep these values unchanged:
+
+id = ${scene.id}
+start = ${scene.start}
+end = ${scene.end}
+
+Camera motion must use ONLY:
+
+"zoom-in"
+"zoom-out"
+"pan-left"
+"pan-right"
+"static"
+
+Motion speed must use ONLY:
+
+"slow"
+"medium"
+"fast"
+
+Transition type must use ONLY:
+
+"cut"
+"fade"
+"dissolve"
+"slide-left"
+"slide-right"
+
+Transition duration should normally be between 0.2 and 0.6 seconds.
+
+Choose motion and transition that fit the scene and the overall video style.
+
+Make the dialogue natural and concise.
+
+Make the visual prompt specific enough to describe the person, product, environment, lighting and framing when relevant.
+
+Return ONLY JSON.
 `;
 
     const ollamaResponse =
       await fetch(
         "http://localhost:11434/api/generate",
         {
-          method: "POST",
+          method:
+            "POST",
 
           headers: {
             "Content-Type":
               "application/json",
           },
 
-          body: JSON.stringify({
-            model:
-              "qwen2.5:3b",
+          body:
+            JSON.stringify({
+              model:
+                "qwen2.5:3b",
 
-            prompt,
+              prompt,
 
-            stream:
-              false,
+              stream:
+                false,
 
-            format:
-              "json",
+              format:
+                "json",
 
-            options: {
-              temperature:
-                0.85,
-            },
-          }),
+              options: {
+                temperature:
+                  0.85,
+              },
+            }),
         },
       );
 
     if (
       !ollamaResponse.ok
     ) {
-      const errorText =
+      const text =
         await ollamaResponse.text();
 
       console.error(
-        "Ollama scene error:",
-        errorText,
+        "OLLAMA SCENE ERROR:",
+        text,
       );
 
       return NextResponse.json(
         {
           error:
-            "Ollama could not regenerate the scene.",
+            "Ollama failed to regenerate the scene.",
         },
         {
           status: 500,
@@ -208,14 +187,17 @@ Return exactly this structure:
     );
   } catch (error) {
     console.error(
-      "Regenerate scene error:",
+      "REGENERATE SCENE ERROR:",
       error,
     );
 
     return NextResponse.json(
       {
         error:
-          "Failed to regenerate scene.",
+          error instanceof
+          Error
+            ? error.message
+            : "Failed to regenerate scene.",
       },
       {
         status: 500,
