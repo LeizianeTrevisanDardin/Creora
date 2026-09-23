@@ -39,6 +39,9 @@ const OPEN_PROJECT_KEY =
 const SESSION_PROJECT_KEY =
   "creora_current_project_id";
 
+const NEW_PROJECT_KEY =
+  "creora_new_project_requested";
+
 function canUseBrowserStorage() {
   return typeof window !==
     "undefined";
@@ -227,6 +230,10 @@ export function setProjectToOpen(
     return;
   }
 
+  window.sessionStorage.removeItem(
+    NEW_PROJECT_KEY,
+  );
+
   window.sessionStorage.setItem(
     OPEN_PROJECT_KEY,
     projectId,
@@ -263,6 +270,10 @@ export function setSessionProjectId(
     return;
   }
 
+  window.sessionStorage.removeItem(
+    NEW_PROJECT_KEY,
+  );
+
   window.sessionStorage.setItem(
     SESSION_PROJECT_KEY,
     projectId,
@@ -279,6 +290,25 @@ export function getSessionProjectId() {
   );
 }
 
+export function consumeNewProjectRequest() {
+  if (!canUseBrowserStorage()) {
+    return false;
+  }
+
+  const requested =
+    window.sessionStorage.getItem(
+      NEW_PROJECT_KEY,
+    ) === "1";
+
+  if (requested) {
+    window.sessionStorage.removeItem(
+      NEW_PROJECT_KEY,
+    );
+  }
+
+  return requested;
+}
+
 export function clearProjectSession() {
   if (!canUseBrowserStorage()) {
     return;
@@ -290,5 +320,10 @@ export function clearProjectSession() {
 
   window.sessionStorage.removeItem(
     SESSION_PROJECT_KEY,
+  );
+
+  window.sessionStorage.setItem(
+    NEW_PROJECT_KEY,
+    "1",
   );
 }

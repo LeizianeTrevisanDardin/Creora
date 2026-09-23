@@ -10,10 +10,24 @@ import {
   UserRound,
 } from "lucide-react";
 
+import Image from "next/image";
 import Link from "next/link";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   usePathname,
 } from "next/navigation";
+
+import {
+  BRAND_PROFILE_UPDATED_EVENT,
+  DEFAULT_BRAND_PROFILE,
+  getBrandProfile,
+  type BrandProfile,
+} from "@/lib/brand-profile";
 
 import {
   clearProjectSession,
@@ -33,24 +47,89 @@ const navigation = [
   {
     label: "Templates",
     icon: Grid2X2,
+    href: "/templates",
   },
   {
     label: "Brand & Profile",
     icon: UserRound,
+    href: "/brand-profile",
   },
   {
     label: "AI Tools",
     icon: Sparkles,
+    href: "/ai-tools",
   },
   {
     label: "Analytics",
     icon: BarChart3,
+    href: "/analytics",
   },
 ];
+
+function getInitials(
+  name: string,
+) {
+  const parts =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "CR";
+  }
+
+  if (parts.length === 1) {
+    return parts[0]
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
 
 export default function Sidebar() {
   const pathname =
     usePathname();
+
+  const [
+    brandProfile,
+    setBrandProfile,
+  ] =
+    useState<BrandProfile>(
+      DEFAULT_BRAND_PROFILE,
+    );
+
+  useEffect(() => {
+    const refreshProfile =
+      () => {
+        setBrandProfile(
+          getBrandProfile(),
+        );
+      };
+
+    const timeoutId =
+      window.setTimeout(
+        refreshProfile,
+        0,
+      );
+
+    window.addEventListener(
+      BRAND_PROFILE_UPDATED_EVENT,
+      refreshProfile,
+    );
+
+    return () => {
+      window.clearTimeout(
+        timeoutId,
+      );
+
+      window.removeEventListener(
+        BRAND_PROFILE_UPDATED_EVENT,
+        refreshProfile,
+      );
+    };
+  }, []);
 
   return (
     <aside className="hidden min-h-screen w-[235px] shrink-0 border-r border-[#e7e8ef] bg-white lg:flex lg:flex-col">
@@ -74,58 +153,38 @@ export default function Sidebar() {
 
       <nav className="flex-1 space-y-2 px-4">
         {navigation.map((item) => {
-          const Icon = item.icon;
+          const Icon =
+            item.icon;
 
           const active =
             item.href === "/"
               ? pathname === "/"
-              : item.href
-                ? pathname.startsWith(
-                    item.href,
-                  )
-                : false;
-
-          const className = [
-            "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition",
-            active
-              ? "bg-[#f0edff] font-medium text-violet-700"
-              : "text-slate-600 hover:bg-slate-50",
-          ].join(" ");
-
-          if (item.href) {
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => {
-                  if (
-                    item.href ===
-                    "/"
-                  ) {
-                    clearProjectSession();
-                  }
-                }}
-                className={
-                  className
-                }
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          }
+              : pathname.startsWith(
+                  item.href,
+                );
 
           return (
-            <button
+            <Link
               key={item.label}
-              type="button"
-              className={
-                className
-              }
+              href={item.href}
+              onClick={() => {
+                if (
+                  item.href ===
+                  "/"
+                ) {
+                  clearProjectSession();
+                }
+              }}
+              className={[
+                "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition",
+                active
+                  ? "bg-[#f0edff] font-medium text-violet-700"
+                  : "text-slate-600 hover:bg-slate-50",
+              ].join(" ")}
             >
               <Icon size={18} />
               {item.label}
-            </button>
+            </Link>
           );
         })}
       </nav>
@@ -152,18 +211,43 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3 px-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-rose-200 to-violet-200 text-xs font-semibold">
-            SM
+        <Link
+          href="/brand-profile"
+          className="mt-4 flex items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-slate-50"
+        >
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-rose-200 to-violet-200 text-xs font-semibold">
+            {brandProfile.avatarUrl ? (
+              <Image
+                src={
+                  brandProfile.avatarUrl
+                }
+                alt={
+                  brandProfile.displayName ||
+                  "Creator avatar"
+                }
+                fill
+                unoptimized
+                sizes="36px"
+                className="object-cover"
+              />
+            ) : (
+              <span>
+                {getInitials(
+                  brandProfile.displayName,
+                )}
+              </span>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">
-              Sarah M.
+              {brandProfile.displayName ||
+                "Creator"}
             </p>
 
-            <p className="text-xs text-slate-400">
-              Creator
+            <p className="truncate text-xs text-slate-400">
+              {brandProfile.role ||
+                "Creator"}
             </p>
           </div>
 
@@ -171,7 +255,7 @@ export default function Sidebar() {
             size={17}
             className="text-slate-500"
           />
-        </div>
+        </Link>
       </div>
     </aside>
   );

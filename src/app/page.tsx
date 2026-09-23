@@ -24,6 +24,15 @@ import VideoPreview from "@/components/editor/VideoPreview";
 import FullVideoPlayer from "@/components/video/FullVideoPlayer";
 
 import {
+  getBrandProfile,
+} from "@/lib/brand-profile";
+
+import {
+  consumeTemplateToUse,
+} from "@/lib/templates";
+
+import {
+  consumeNewProjectRequest,
   getSavedProject,
   getProjectToOpen,
   getSessionProjectId,
@@ -445,11 +454,27 @@ export default function Home() {
   useEffect(() => {
     const timeoutId =
       window.setTimeout(() => {
+        const requestedNewProject =
+          consumeNewProjectRequest();
+
+        const templateToUse =
+          consumeTemplateToUse();
+
+        const startFreshProject =
+          requestedNewProject ||
+          Boolean(
+            templateToUse,
+          );
+
         const projectToOpen =
-          getProjectToOpen();
+          startFreshProject
+            ? null
+            : getProjectToOpen();
 
         const sessionProjectId =
-          getSessionProjectId();
+          startFreshProject
+            ? null
+            : getSessionProjectId();
 
         const savedProject =
           projectToOpen ??
@@ -459,7 +484,104 @@ export default function Home() {
               )
             : null);
 
-        if (!savedProject) {
+        if (
+          startFreshProject ||
+          !savedProject
+        ) {
+          const brandProfile =
+            getBrandProfile();
+
+          setCurrentProjectId(
+            null,
+          );
+
+          setImagePreview(
+            null,
+          );
+
+          setGeneratedContent(
+            null,
+          );
+
+          setPreviewTitle(
+            templateToUse?.name ?? null,
+          );
+
+          setPreviewSubtitle(
+            templateToUse?.description ?? null,
+          );
+
+          setCaptionStyle(
+            "dynamic",
+          );
+
+          setCaptionSyncOffsetMs(
+            0,
+          );
+
+          setVoicePreset(
+            "natural-female",
+          );
+
+          setMusicTrack(
+            "none",
+          );
+
+          setMusicVolume(
+            25,
+          );
+
+          setAutoDucking(
+            true,
+          );
+
+          setBrandingEnabled(
+            false,
+          );
+
+          setBrandLogo(
+            brandProfile.logoUrl,
+          );
+
+          setBrandingPosition(
+            "top-right",
+          );
+
+          setBrandingSize(
+            16,
+          );
+
+          setBrandingOpacity(
+            85,
+          );
+
+          setProject({
+            creatorDescription:
+              brandProfile.bio.trim() ||
+              "Lifestyle influencer, confident, modern, loves fashion, wellness and travel. My audience is young women who want a more balanced and beautiful life.",
+
+            videoPrompt:
+              templateToUse?.videoPrompt ||
+              "3 morning habits that changed my life. Make it feel natural, fast-paced and TikTok friendly.",
+
+            platform:
+              templateToUse?.platform ||
+              brandProfile.defaultPlatform,
+
+            duration:
+              templateToUse?.duration ||
+              brandProfile.defaultDuration,
+
+            style:
+              templateToUse?.style ||
+              brandProfile.defaultStyle,
+          });
+
+          setContentVersion(
+            (current) =>
+              current + 1,
+          );
+
           return;
         }
 
