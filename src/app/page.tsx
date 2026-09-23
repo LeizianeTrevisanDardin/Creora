@@ -5,10 +5,12 @@ import {
   ArrowUp,
   Download,
   LoaderCircle,
+  Save,
   Trash2,
 } from "lucide-react";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -20,6 +22,14 @@ import EditorControls from "@/components/editor/EditorControls";
 import ScriptPanel from "@/components/editor/ScriptPanel";
 import VideoPreview from "@/components/editor/VideoPreview";
 import FullVideoPlayer from "@/components/video/FullVideoPlayer";
+
+import {
+  getSavedProject,
+  getProjectToOpen,
+  getSessionProjectId,
+  saveSavedProject,
+  setSessionProjectId,
+} from "@/lib/projects";
 
 // =================================
 // TYPES
@@ -409,6 +419,134 @@ export default function Home() {
     setIsExporting,
   ] =
     useState(false);
+
+  // =================================
+  // SAVED PROJECT
+  // =================================
+
+  const [
+    currentProjectId,
+    setCurrentProjectId,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    isSavingProject,
+    setIsSavingProject,
+  ] =
+    useState(false);
+
+  // =================================
+  // LOAD SAVED PROJECT
+  // =================================
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(() => {
+        const projectToOpen =
+          getProjectToOpen();
+
+        const sessionProjectId =
+          getSessionProjectId();
+
+        const savedProject =
+          projectToOpen ??
+          (sessionProjectId
+            ? getSavedProject(
+                sessionProjectId,
+              )
+            : null);
+
+        if (!savedProject) {
+          return;
+        }
+
+        setCurrentProjectId(
+          savedProject.id,
+        );
+
+        setSessionProjectId(
+          savedProject.id,
+        );
+
+        setImagePreview(
+          savedProject.imagePreview,
+        );
+
+        setProject(
+          savedProject.project,
+        );
+
+        setGeneratedContent(
+          savedProject.generatedContent,
+        );
+
+        setPreviewTitle(
+          savedProject.previewTitle,
+        );
+
+        setPreviewSubtitle(
+          savedProject.previewSubtitle,
+        );
+
+        setCaptionStyle(
+          savedProject.captionStyle,
+        );
+
+        setCaptionSyncOffsetMs(
+          savedProject.captionSyncOffsetMs,
+        );
+
+        setVoicePreset(
+          savedProject.voicePreset,
+        );
+
+        setMusicTrack(
+          savedProject.musicTrack,
+        );
+
+        setMusicVolume(
+          savedProject.musicVolume,
+        );
+
+        setAutoDucking(
+          savedProject.autoDucking,
+        );
+
+        setBrandingEnabled(
+          savedProject.brandingEnabled,
+        );
+
+        setBrandLogo(
+          savedProject.brandLogo,
+        );
+
+        setBrandingPosition(
+          savedProject.brandingPosition,
+        );
+
+        setBrandingSize(
+          savedProject.brandingSize,
+        );
+
+        setBrandingOpacity(
+          savedProject.brandingOpacity,
+        );
+
+        setContentVersion(
+          (current) =>
+            current + 1,
+        );
+      }, 0);
+
+    return () => {
+      window.clearTimeout(
+        timeoutId,
+      );
+    };
+  }, []);
 
   // =================================
   // GENERATE VOICE FOR ONE SCENE
@@ -1225,6 +1363,99 @@ export default function Home() {
     };
 
   // =================================
+  // SAVE PROJECT
+  // =================================
+
+  const handleSaveProject =
+    () => {
+      try {
+        setIsSavingProject(
+          true,
+        );
+
+        const existingProject =
+          currentProjectId
+            ? getSavedProject(
+                currentProjectId,
+              )
+            : null;
+
+        const now =
+          new Date().toISOString();
+
+        const projectName =
+          (previewTitle ?? "").trim() ||
+          generatedContent?.title.trim() ||
+          project.videoPrompt
+            .trim()
+            .slice(0, 60) ||
+          "Untitled Project";
+
+        const projectId =
+          existingProject?.id ??
+          (typeof crypto !==
+            "undefined" &&
+          "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `project-${Date.now()}`);
+
+        saveSavedProject({
+          id: projectId,
+          name: projectName,
+          createdAt:
+            existingProject?.createdAt ??
+            now,
+          updatedAt: now,
+          imagePreview,
+          project,
+          generatedContent,
+          previewTitle,
+          previewSubtitle,
+          captionStyle,
+          captionSyncOffsetMs,
+          voicePreset,
+          musicTrack,
+          musicVolume,
+          autoDucking,
+          brandingEnabled,
+          brandLogo,
+          brandingPosition,
+          brandingSize,
+          brandingOpacity,
+        });
+
+        setCurrentProjectId(
+          projectId,
+        );
+
+        setSessionProjectId(
+          projectId,
+        );
+
+        alert(
+          existingProject
+            ? "Project updated."
+            : "Project saved.",
+        );
+      } catch (error) {
+        console.error(
+          "Save project error:",
+          error,
+        );
+
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Could not save the project.",
+        );
+      } finally {
+        setIsSavingProject(
+          false,
+        );
+      }
+    };
+
+  // =================================
   // EXPORT VIDEO
   // =================================
 
@@ -1444,6 +1675,32 @@ export default function Home() {
                 Turn a photo and an idea into ready-to-post social content.
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={
+                handleSaveProject
+              }
+              disabled={
+                isSavingProject
+              }
+              className="flex w-fit shrink-0 items-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSavingProject ? (
+                <LoaderCircle
+                  size={16}
+                  className="animate-spin"
+                />
+              ) : (
+                <Save
+                  size={16}
+                />
+              )}
+
+              {currentProjectId
+                ? "Save Changes"
+                : "Save Project"}
+            </button>
           </div>
 
           {/* =================================

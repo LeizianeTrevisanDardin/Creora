@@ -10,15 +10,25 @@ import {
   UserRound,
 } from "lucide-react";
 
+import Link from "next/link";
+import {
+  usePathname,
+} from "next/navigation";
+
+import {
+  clearProjectSession,
+} from "@/lib/projects";
+
 const navigation = [
   {
     label: "Create",
     icon: House,
-    active: true,
+    href: "/",
   },
   {
     label: "Projects",
     icon: Folder,
+    href: "/projects",
   },
   {
     label: "Templates",
@@ -39,6 +49,9 @@ const navigation = [
 ];
 
 export default function Sidebar() {
+  const pathname =
+    usePathname();
+
   return (
     <aside className="hidden min-h-screen w-[235px] shrink-0 border-r border-[#e7e8ef] bg-white lg:flex lg:flex-col">
       <div className="px-7 pb-7 pt-7">
@@ -63,15 +76,52 @@ export default function Sidebar() {
         {navigation.map((item) => {
           const Icon = item.icon;
 
+          const active =
+            item.href === "/"
+              ? pathname === "/"
+              : item.href
+                ? pathname.startsWith(
+                    item.href,
+                  )
+                : false;
+
+          const className = [
+            "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition",
+            active
+              ? "bg-[#f0edff] font-medium text-violet-700"
+              : "text-slate-600 hover:bg-slate-50",
+          ].join(" ");
+
+          if (item.href) {
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => {
+                  if (
+                    item.href ===
+                    "/"
+                  ) {
+                    clearProjectSession();
+                  }
+                }}
+                className={
+                  className
+                }
+              >
+                <Icon size={18} />
+                {item.label}
+              </Link>
+            );
+          }
+
           return (
             <button
               key={item.label}
-              className={[
-                "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition",
-                item.active
-                  ? "bg-[#f0edff] font-medium text-violet-700"
-                  : "text-slate-600 hover:bg-slate-50",
-              ].join(" ")}
+              type="button"
+              className={
+                className
+              }
             >
               <Icon size={18} />
               {item.label}

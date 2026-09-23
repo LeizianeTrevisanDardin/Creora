@@ -1,59 +1,56 @@
 import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
   spawn,
-} from "node:child_process";
+} from "child_process";
 
 import {
   existsSync,
   mkdirSync,
-} from "node:fs";
+} from "fs";
 
-import {
-  join,
-} from "node:path";
+import path from "path";
 
-import {
-  NextResponse,
-} from "next/server";
+import crypto from "crypto";
 
 export const runtime =
   "nodejs";
-
-export const dynamic =
-  "force-dynamic";
 
 type VoicePreset =
   | "natural-female"
   | "natural-male"
   | "warm-creator";
 
-type RequestBody = {
-  text?: string;
+type VoiceRequest = {
+  text: string;
   voice?: VoicePreset;
 };
 
-type WordTiming = {
-  word: string;
-  start: number;
-  end: number;
-};
-
-type PythonVoiceResult = {
+type PythonResult = {
   success: boolean;
-
   output_path: string;
-
   sample_rate: number;
-
   duration: number;
 
-  word_timings:
-    WordTiming[];
+  word_timings?: {
+    word: string;
+    start: number;
+    end: number;
+  }[];
 };
 
-const VOICE_MAP: Record<
-  VoicePreset,
-  string
-> = {
+// =================================
+// VOICE MAP
+// =================================
+
+const VOICE_MAP:
+  Record<
+    VoicePreset,
+    string
+  > = {
   "natural-female":
     "af_heart",
 
@@ -65,195 +62,30 @@ const VOICE_MAP: Record<
 };
 
 // =================================
-// RUN PYTHON
+// GET PYTHON PATH
 // =================================
 
-function runPythonVoice({
-  text,
-  voice,
-  outputPath,
-}: {
-  text: string;
-  voice: string;
-  outputPath: string;
-}) {
-  return new Promise<PythonVoiceResult>(
-    (
-      resolve,
-      reject,
-    ) => {
-      const pythonPath =
-        join(
-          process.cwd(),
+function getPythonPath() {
+  const projectRoot =
+    process.cwd();
+
+  const pythonPath =
+    process.platform ===
+    "win32"
+      ? path.join(
+          projectRoot,
+          ".venv",
+          "Scripts",
+          "python.exe",
+        )
+      : path.join(
+          projectRoot,
           ".venv",
           "bin",
           "python",
         );
 
-      const scriptPath =
-        join(
-          process.cwd(),
-          "scripts",
-          "generate_voice.py",
-        );
-
-      if (
-        !existsSync(
-          pythonPath,
-        )
-      ) {
-        reject(
-          new Error(
-            `Python virtual environment was not found at: ${pythonPath}`,
-          ),
-        );
-
-        return;
-      }
-
-      if (
-        !existsSync(
-          scriptPath,
-        )
-      ) {
-        reject(
-          new Error(
-            `Voice script was not found at: ${scriptPath}`,
-          ),
-        );
-
-        return;
-      }
-
-      const childProcess =
-        spawn(
-          pythonPath,
-          [
-            scriptPath,
-          ],
-          {
-            cwd:
-              process.cwd(),
-          },
-        );
-
-      let stdout =
-        "";
-
-      let stderr =
-        "";
-
-      childProcess.stdout.on(
-        "data",
-        (
-          data: Buffer,
-        ) => {
-          stdout +=
-            data.toString();
-        },
-      );
-
-      childProcess.stderr.on(
-        "data",
-        (
-          data: Buffer,
-        ) => {
-          stderr +=
-            data.toString();
-        },
-      );
-
-      childProcess.on(
-        "error",
-        (
-          error: Error,
-        ) => {
-          reject(
-            error,
-          );
-        },
-      );
-
-      childProcess.on(
-        "close",
-        (
-          code:
-            number | null,
-        ) => {
-          if (
-            code !== 0
-          ) {
-            console.error(
-              "PYTHON VOICE ERROR:",
-              stderr,
-            );
-
-            reject(
-              new Error(
-                stderr ||
-                  stdout ||
-                  `Python exited with code ${code}`,
-              ),
-            );
-
-            return;
-          }
-
-          try {
-            const lines =
-              stdout
-                .trim()
-                .split("\n")
-                .filter(
-                  Boolean,
-                );
-
-            const lastLine =
-              lines[
-                lines.length -
-                  1
-              ];
-
-            if (!lastLine) {
-              throw new Error(
-                "Python did not return a result.",
-              );
-            }
-
-            const result =
-              JSON.parse(
-                lastLine,
-              ) as PythonVoiceResult;
-
-            resolve(
-              result,
-            );
-          } catch (error) {
-            reject(
-              new Error(
-                error instanceof
-                Error
-                  ? error.message
-                  : "Could not read Python voice result.",
-              ),
-            );
-          }
-        },
-      );
-
-      childProcess.stdin.write(
-        JSON.stringify({
-          text,
-          voice,
-
-          output_path:
-            outputPath,
-        }),
-      );
-
-      childProcess.stdin.end();
-    },
-  );
+  return pythonPath;
 }
 
 // =================================
@@ -261,11 +93,12 @@ function runPythonVoice({
 // =================================
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
 ) {
   try {
     const body =
-      (await request.json()) as RequestBody;
+      (await request.json()) as
+        VoiceRequest;
 
     const text =
       body.text?.trim();
@@ -274,6 +107,10 @@ export async function POST(
       body.voice ??
       "natural-female";
 
+    // =================================
+    // VALIDATION
+    // =================================
+
     if (!text) {
       return NextResponse.json(
         {
@@ -281,23 +118,75 @@ export async function POST(
             "Text is required.",
         },
         {
-          status:
-            400,
+          status: 400,
         },
       );
     }
 
-    const selectedVoice =
-      VOICE_MAP[
-        voicePreset
-      ] ??
-      VOICE_MAP[
-        "natural-female"
-      ];
+    // =================================
+    // PROJECT PATHS
+    // =================================
 
-    const publicFolder =
-      join(
-        process.cwd(),
+    const projectRoot =
+      process.cwd();
+
+    const pythonPath =
+      getPythonPath();
+
+    const scriptPath =
+      path.join(
+        projectRoot,
+        "scripts",
+        "generate_voice.py",
+      );
+
+    // =================================
+    // CHECK PYTHON
+    // =================================
+
+    if (
+      !existsSync(
+        pythonPath,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            `Python virtual environment was not found at: ${pythonPath}`,
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    // =================================
+    // CHECK SCRIPT
+    // =================================
+
+    if (
+      !existsSync(
+        scriptPath,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            `Voice generation script was not found at: ${scriptPath}`,
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    // =================================
+    // OUTPUT DIRECTORY
+    // =================================
+
+    const outputDirectory =
+      path.join(
+        projectRoot,
         "public",
         "generated",
         "voiceovers",
@@ -305,58 +194,234 @@ export async function POST(
 
     if (
       !existsSync(
-        publicFolder,
+        outputDirectory,
       )
     ) {
       mkdirSync(
-        publicFolder,
+        outputDirectory,
         {
-          recursive:
-            true,
+          recursive: true,
         },
       );
     }
 
+    // =================================
+    // FILE NAME
+    // =================================
+
     const fileName =
-      `voice-${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}.wav`;
+      `voice-${Date.now()}-${crypto
+        .randomUUID()
+        .slice(
+          0,
+          8,
+        )}.wav`;
 
     const outputPath =
-      join(
-        publicFolder,
+      path.join(
+        outputDirectory,
         fileName,
       );
 
+    // =================================
+    // KOKORO VOICE
+    // =================================
+
+    const kokoroVoice =
+      VOICE_MAP[
+        voicePreset
+      ] ??
+      VOICE_MAP[
+        "natural-female"
+      ];
+
+    // =================================
+    // RUN PYTHON
+    // =================================
+
     const result =
-      await runPythonVoice({
-        text,
+      await new Promise<PythonResult>(
+        (
+          resolve,
+          reject,
+        ) => {
+          const python =
+            spawn(
+              pythonPath,
+              [
+                scriptPath,
+              ],
+              {
+                cwd:
+                  projectRoot,
 
-        voice:
-          selectedVoice,
+                stdio: [
+                  "pipe",
+                  "pipe",
+                  "pipe",
+                ],
 
-        outputPath,
-      });
+                windowsHide:
+                  true,
+              },
+            );
 
-    return NextResponse.json({
-      success:
-        true,
+          let stdout =
+            "";
 
-      audioUrl:
-        `/generated/voiceovers/${fileName}`,
+          let stderr =
+            "";
 
-      audioDuration:
-        result.duration,
+          python.stdout.on(
+            "data",
+            (
+              data:
+                Buffer,
+            ) => {
+              stdout +=
+                data.toString();
+            },
+          );
 
-      wordTimings:
-        result.word_timings,
+          python.stderr.on(
+            "data",
+            (
+              data:
+                Buffer,
+            ) => {
+              stderr +=
+                data.toString();
+            },
+          );
 
-      voice:
-        voicePreset,
-    });
+          python.on(
+            "error",
+            (error) => {
+              reject(
+                error,
+              );
+            },
+          );
+
+          python.on(
+            "close",
+            (code) => {
+              if (
+                code !== 0
+              ) {
+                reject(
+                  new Error(
+                    stderr ||
+                      `Python exited with code ${code}.`,
+                  ),
+                );
+
+                return;
+              }
+
+              try {
+                /*
+                 * Kokoro / Python packages may print
+                 * extra information before the final JSON.
+                 *
+                 * The final non-empty line is our result.
+                 */
+
+                const lines =
+                  stdout
+                    .trim()
+                    .split(
+                      "\n",
+                    )
+                    .map(
+                      (
+                        line,
+                      ) =>
+                        line.trim(),
+                    )
+                    .filter(
+                      Boolean,
+                    );
+
+                const jsonLine =
+                  lines[
+                    lines.length -
+                      1
+                  ];
+
+                if (
+                  !jsonLine
+                ) {
+                  throw new Error(
+                    "Python returned no result.",
+                  );
+                }
+
+                const parsed =
+                  JSON.parse(
+                    jsonLine,
+                  ) as
+                    PythonResult;
+
+                resolve(
+                  parsed,
+                );
+              } catch (
+                error
+              ) {
+                reject(
+                  new Error(
+                    `Could not read Python response.\n\n${stdout}\n\n${stderr}\n\n${String(
+                      error,
+                    )}`,
+                  ),
+                );
+              }
+            },
+          );
+
+          // =================================
+          // SEND DATA TO PYTHON
+          // =================================
+
+          python.stdin.write(
+            JSON.stringify({
+              text,
+
+              voice:
+                kokoroVoice,
+
+              output_path:
+                outputPath,
+            }),
+          );
+
+          python.stdin.end();
+        },
+      );
+
+    // =================================
+    // RESPONSE
+    // =================================
+
+    return NextResponse.json(
+      {
+        success: true,
+
+        audioUrl:
+          `/generated/voiceovers/${fileName}`,
+
+        audioDuration:
+          result.duration,
+
+        wordTimings:
+          result.word_timings ??
+          [],
+      },
+    );
   } catch (error) {
     console.error(
-      "GENERATE VOICE ERROR:",
+      "Generate voice error:",
       error,
     );
 
@@ -366,11 +431,10 @@ export async function POST(
           error instanceof
           Error
             ? error.message
-            : "Could not generate voiceover.",
+            : "Could not generate voice.",
       },
       {
-        status:
-          500,
+        status: 500,
       },
     );
   }
